@@ -8,14 +8,17 @@ Implement a tool that automatically generates PlantUML class diagrams from Java 
     - [x] Java parsing implemented using `javalang`.
     - [x] Kotlin parsing implemented using `tree-sitter-kotlin`.
 - [x] **Relationship Extraction**:
-    - [x] Inheritance and interface implementation for Java.
-    - [x] Inheritance for Kotlin.
+    - [x] Java: Extends, Implements, Association (fields), Aggregation (collections), Dependency (methods).
+    - [x] Kotlin: Extends, Implements, Association, Aggregation, Dependency.
 - [x] **Package-level grouping**:
     - [x] Automatic grouping of classes into `package` blocks in PlantUML.
-- [x] **PlantUML Generation**:
-    - [x] Automated PUML syntax generation for classes, interfaces, enums, objects, fields, and methods.
+    - [x] Smart relationship routing (definitions in packages, links outside) to prevent duplication.
+- [x] **Advanced Features**:
+    - [x] **Auto-Layout**: Heuristic-based diagram alignment (Left-to-Right vs Top-to-Bottom).
+    - [x] **Dynamic Spacing**: Nodesep/ranksep adjusted based on diagram complexity.
+    - [x] **Premium Theming**: Clean black & white design with rounded corners.
 - [x] **CLI Interface**:
-    - [x] Implemented with `click`, supporting directory/file input and output file specification.
+    - [x] Implemented with `click`, supporting recursive directory scanning and diagram naming.
 
 ## Usage
 Run the following command to generate a diagram:

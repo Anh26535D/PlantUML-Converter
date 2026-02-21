@@ -1,4 +1,17 @@
-@startuml "main"
+@startuml main
+
+skinparam shadowing false
+skinparam class {
+    BackgroundColor white
+    ArrowColor #263238
+    BorderColor #263238
+}
+skinparam packageStyle rectangle
+left to right direction
+skinparam nodesep 80
+skinparam ranksep 100
+skinparam linetype polyline
+
   package "edu.hust" {
     class Main {
       +{static} main(String) : void
@@ -23,6 +36,13 @@
   }
 
   package "edu.hust.pipeline" {
+    class Builder {
+      -stepDefinitions : StepDef
+      +add(ImageProcessorType, ImagePluginType) : Builder
+      +add(String, ImageProcessorType, ImagePluginType) : Builder
+      +build() : Pipeline
+      -resolvePlugins(StepDef) : ImagePlugin
+    }
     interface ImageProcessor {
       ~run(Buffer, Buffer, PipelineOption) : Buffer
     }
@@ -31,18 +51,6 @@
       -nameMapping : String
       +run(Buffer, Buffer, PipelineOption) : Buffer
       +getNameMapping() : String
-    }
-    class Builder {
-      -stepDefinitions : StepDef
-      +add(ImageProcessorType, ImagePluginType) : Builder
-      +add(String, ImageProcessorType, ImagePluginType) : Builder
-      +build() : Pipeline
-      -resolvePlugins(StepDef) : ImagePlugin
-    }
-    class StepDef {
-      ~name : String
-      ~pType : ImageProcessorType
-      ~plType : ImagePluginType
     }
     class PipelineOption {
       -stepData : Integer
@@ -58,17 +66,22 @@
       +getActiveOption() : String
       +toString() : String
     }
-    class StepConfig {
-      -index : int
-      +set(String, Object) : StepConfig
-      +step() : StepConfig
-    }
     class SingleImageProcessor {
       -name : String
       -implementation : ImageProcessor
       -stepIndex : int
       +run(Buffer, Buffer, PipelineOption) : Buffer
       +toString() : String
+    }
+    class StepConfig {
+      -index : int
+      +set(String, Object) : StepConfig
+      +step() : StepConfig
+    }
+    class StepDef {
+      ~name : String
+      ~pType : ImageProcessorType
+      ~plType : ImagePluginType
     }
   }
 

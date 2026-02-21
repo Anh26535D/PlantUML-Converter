@@ -61,6 +61,42 @@ We follow the **[Conventional Commits](https://www.conventionalcommits.org/)** s
 
 ---
 
+## 🏗️ Project Structure
+
+```text
+plantuml_converter/
+├── converter/            # Core logic package
+│   ├── base.py           # Abstract base class for all parsers
+│   ├── factory.py        # Parser factory for dynamic language support
+│   ├── java_parser.py    # Java-specific parsing logic
+│   ├── kotlin_parser.py  # Kotlin-specific parsing logic
+│   ├── models.py         # Shared data models (Class, Field, Method)
+│   └── puml_generator.py # PlantUML syntax and layout engine
+├── examples/             # Sample Java/Kotlin files for testing
+├── main.py               # CLI entry point
+├── pyproject.toml        # Project configuration and dependencies
+└── DEVELOPMENT.md        # Technical guidelines
+```
+
+## 📦 Module Descriptions
+
+### `converter/base.py`
+Defines the `BaseParser` interface. Every language parser must inherit from this class to ensure consistency across the application.
+
+### `converter/models.py`
+Contains the `dataclasses` that represent the extracted code structure. This is the common "language" between parsers and the generator.
+
+### `converter/factory.py`
+Manages the registration and retrieval of parsers. It allows the CLI to automatically select the correct parser based on file extensions.
+
+### `converter/puml_generator.py`
+The "brain" of the output. It takes the models and converts them into PlantUML code. It also handles **Auto-Layout**, **Theming**, and **Package Grouping**.
+
+### `converter/*_parser.py`
+Language-specific implementations. They use specialized libraries (like `javalang` or `tree-sitter`) to traverse the AST and populate the shared models.
+
+---
+
 ## 🛠️ Workflow
 
 ### Dependency Management
