@@ -1,7 +1,12 @@
 import javalang
+from .base import BaseParser
 from .models import ClassModel, FieldModel, MethodModel
 
-class JavaParser:
+class JavaParser(BaseParser):
+    @property
+    def supported_extensions(self) -> list[str]:
+        return [".java"]
+
     def parse(self, content: str) -> list[ClassModel]:
         tree = javalang.parse.parse(content)
         classes = []

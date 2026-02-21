@@ -73,6 +73,14 @@ Use `uv` for all dependency and environment management.
 - `feature/<name>`: For new features.
 - `bugfix/<name>`: For bug fixes.
 
+## ➕ Adding a New Language
+To add support for a new language (e.g., C++):
+
+1.  **Create a Parser**: Create a new file in `converter/` (e.g., `cpp_parser.py`) that inherits from `BaseParser`.
+2.  **Implement `parse`**: Extract class hierarchies and members using an appropriate library (like `tree-sitter`).
+3.  **Define Extensions**: Implement the `supported_extensions` property (e.g., `[".cpp", ".hpp"]`).
+4.  **Register Parser**: Add your new parser to the `ParserFactory` in `converter/factory.py`.
+
 ---
 
 ## 🧪 Testing

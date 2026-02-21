@@ -1,8 +1,7 @@
 import click
 import os
 from pathlib import Path
-from converter.java_parser import JavaParser
-from converter.kotlin_parser import KotlinParser
+from converter.factory import ParserFactory
 from converter.puml_generator import PUMLGenerator
 
 @click.command()
@@ -13,31 +12,33 @@ def main(path, output):
     Convert Java/Kotlin source code to PlantUML class diagrams.
     PATH can be a file or a directory.
     """
-    java_parser = JavaParser()
-    kotlin_parser = KotlinParser()
+    parser_factory = ParserFactory()
     puml_gen = PUMLGenerator()
     
     all_classes = []
+    supported_extensions = parser_factory.get_supported_extensions()
     
     files_to_process = []
     if os.path.isfile(path):
         files_to_process.append(Path(path))
     else:
-        for ext in ['*.java', '*.kt']:
-            files_to_process.extend(Path(path).rglob(ext))
+        for ext in supported_extensions:
+            files_to_process.extend(Path(path).rglob(f"*{ext}"))
 
     if not files_to_process:
-        click.echo("No Java or Kotlin files found.")
+        click.echo(f"No supported files found (supported: {', '.join(supported_extensions)})")
         return
 
     for file_path in files_to_process:
+        parser = parser_factory.get_parser_for_extension(file_path.suffix)
+        if not parser:
+            click.echo(f"Skipping {file_path}: No parser for extension {file_path.suffix}")
+            continue
+
         click.echo(f"Processing {file_path}...")
         try:
             content = file_path.read_text(encoding='utf-8')
-            if file_path.suffix == '.java':
-                all_classes.extend(java_parser.parse(content))
-            elif file_path.suffix == '.kt':
-                all_classes.extend(kotlin_parser.parse(content))
+            all_classes.extend(parser.parse(content))
         except Exception as e:
             click.echo(f"Failed to parse {file_path}: {e}", err=True)
 

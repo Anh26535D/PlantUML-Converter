@@ -1,8 +1,13 @@
 from tree_sitter import Language, Parser
 import tree_sitter_kotlin
+from .base import BaseParser
 from .models import ClassModel, FieldModel, MethodModel
 
-class KotlinParser:
+class KotlinParser(BaseParser):
+    @property
+    def supported_extensions(self) -> list[str]:
+        return [".kt"]
+
     def __init__(self):
         self.language = Language(tree_sitter_kotlin.language())
         self.parser = Parser(self.language)
