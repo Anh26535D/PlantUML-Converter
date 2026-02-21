@@ -80,7 +80,16 @@ class KotlinParser(BaseParser):
                 for param in params.children:
                     if param.type == "class_parameter":
                         field = self._parse_class_parameter(param)
-                        if field: model.fields.append(field)
+                        if field:
+                            model.fields.append(field)
+                            if not self._is_primitive(field.type):
+                                # Heuristic for collection
+                                raw_text = self._get_text(param)
+                                is_collect = any(c in raw_text for c in ("List", "Set", "Map", "Collection", "Array"))
+                                if is_collect:
+                                    model.aggregations.append(field.type)
+                                else:
+                                    model.associations.append(field.type)
 
         # Body
         body = self._find_child(node, "class_body")
@@ -88,10 +97,23 @@ class KotlinParser(BaseParser):
             for child in body.children:
                 if child.type == "property_declaration":
                     field = self._parse_property(child)
-                    if field: model.fields.append(field)
+                    if field:
+                        model.fields.append(field)
+                        if not self._is_primitive(field.type):
+                            raw_text = self._get_text(child)
+                            is_collect = any(c in raw_text for c in ("List", "Set", "Map", "Collection", "Array"))
+                            if is_collect:
+                                model.aggregations.append(field.type)
+                            else:
+                                model.associations.append(field.type)
                 elif child.type == "function_declaration":
                     method = self._parse_function(child)
-                    if method: model.methods.append(method)
+                    if method:
+                        model.methods.append(method)
+                        # Detect dependencies
+                        for t in [method.return_type] + method.parameters:
+                            if not self._is_primitive(t) and t != "Unit":
+                                model.dependencies.append(t)
 
         return model
 
@@ -102,18 +124,17 @@ class KotlinParser(BaseParser):
             
         name = self._get_text(self._find_child(node, "identifier"))
         type_node = self._find_child(node, "user_type") or self._find_child(node, "type")
-        prop_type = self._get_text(type_node) if type_node else "Any"
+        prop_type = self._extract_type(type_node) if type_node else "Any"
         
         return FieldModel(name=name, type=prop_type)
 
     def _parse_property(self, node) -> FieldModel:
-        # Simplified: property_declaration -> variable_declaration -> identifier
         var_decl = self._find_child(node, "variable_declaration")
         if not var_decl: return None
         
         name = self._get_text(self._find_child(var_decl, "identifier"))
         type_node = self._find_child(var_decl, "user_type") or self._find_child(var_decl, "type")
-        prop_type = self._get_text(type_node) if type_node else "Any"
+        prop_type = self._extract_type(type_node) if type_node else "Any"
         
         return FieldModel(name=name, type=prop_type)
 
@@ -123,17 +144,45 @@ class KotlinParser(BaseParser):
         params = []
         
         type_node = self._find_child(node, "user_type") or self._find_child(node, "type")
-        if type_node: ret_type = self._get_text(type_node)
+        if type_node: ret_type = self._extract_type(type_node)
         
         val_params = self._find_child(node, "function_value_parameters")
         if val_params:
             for p in val_params.children:
                 if p.type == "parameter":
+                    # Parameters can have user_type or type
+                    # Actually p.children find "type" which might contain "user_type"
                     p_type_node = self._find_child(p, "type") or self._find_child(p, "user_type")
-                    if p_type_node: params.append(self._get_text(p_type_node))
+                    if p_type_node: params.append(self._extract_type(p_type_node))
                     else: params.append("Any")
         
         return MethodModel(name=name, return_type=ret_type, parameters=params)
+
+    def _extract_type(self, node) -> str:
+        if not node: return "Any"
+        # Handle generics like List<String>
+        # In tree-sitter-kotlin, user_type might have type_arguments
+        type_args = self._find_child(node, "type_arguments")
+        base_name = self._get_text(node)
+        
+        if type_args:
+             # Extract first arg for relationship detection
+             # user_type -> type_arguments -> type -> user_type -> identifier
+             # This is a bit complex to traverse perfectly, but let's try a heuristic
+             text = self._get_text(node)
+             if "<" in text and ">" in text:
+                 # Poor man's generic extraction
+                 inner = text[text.find("<")+1 : text.rfind(">")]
+                 # If base is a collection, return inner
+                 for coll in ("List", "Set", "Map", "Collection", "ArrayList", "HashSet"):
+                     if text.startswith(coll):
+                         return inner.split(",")[0].strip()
+                 return text
+        return base_name
+
+    def _is_primitive(self, type_name: str) -> bool:
+        primitives = {"Int", "Long", "Short", "Byte", "Float", "Double", "Boolean", "Char", "String", "Any", "Unit"}
+        return type_name in primitives
 
     def _find_child(self, node, node_type):
         for child in node.children:

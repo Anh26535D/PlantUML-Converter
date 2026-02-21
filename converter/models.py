@@ -27,3 +27,7 @@ class ClassModel:
     implements: List[str] = field(default_factory=list)
     is_abstract: bool = False
     package: Optional[str] = None
+    associations: List[str] = field(default_factory=list)
+    dependencies: List[str] = field(default_factory=list)
+    aggregations: List[str] = field(default_factory=list)
+    compositions: List[str] = field(default_factory=list)
