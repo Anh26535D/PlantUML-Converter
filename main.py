@@ -46,7 +46,8 @@ def main(path, output):
         click.echo("No classes extracted.")
         return
 
-    puml_content = puml_gen.generate(all_classes)
+    diagram_name = Path(output).stem
+    puml_content = puml_gen.generate(all_classes, title=diagram_name)
     
     with open(output, 'w', encoding='utf-8') as f:
         f.write(puml_content)

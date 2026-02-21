@@ -1,8 +1,9 @@
 from .models import ClassModel
 
 class PUMLGenerator:
-    def generate(self, classes: list[ClassModel]) -> str:
-        lines = ["@startuml"]
+    def generate(self, classes: list[ClassModel], title: str = None) -> str:
+        start_tag = f"@startuml \"{title}\"" if title else "@startuml"
+        lines = [start_tag]
         
         # Group by package
         packages = {}
