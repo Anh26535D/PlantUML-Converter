@@ -1,135 +1,99 @@
 [
   {
-    "name": "Controller",
+    "name": "SpaceStation",
     "type": "class",
     "visibility": "+",
     "fields": [
       {
-        "name": "service",
-        "type": "Service",
+        "name": "lifeSupport",
+        "type": "LifeSupportSystem",
         "visibility": "-",
         "static": false
       },
       {
-        "name": "entities",
-        "type": "Entity",
+        "name": "hull",
+        "type": "StructuralIntegrity",
+        "visibility": "-",
+        "static": false
+      },
+      {
+        "name": "dockingBays",
+        "type": "DockingBay",
+        "visibility": "-",
+        "static": false
+      },
+      {
+        "name": "activeDutyPilot",
+        "type": "Pilot",
         "visibility": "-",
         "static": false
       }
     ],
     "methods": [
       {
-        "name": "process",
+        "name": "executeMission",
         "return_type": "void",
         "parameters": [
-          "Request"
+          "MissionControl"
+        ],
+        "visibility": "+",
+        "static": false
+      },
+      {
+        "name": "performMaintenance",
+        "return_type": "void",
+        "parameters": [
+          "Toolkit"
         ],
         "visibility": "+",
         "static": false
       }
     ],
-    "extends": null,
-    "implements": [],
+    "extends": "OrbitalStructure",
+    "implements": [
+      "IMaintainable"
+    ],
     "is_abstract": false,
-    "package": "com.example.arch",
+    "package": "com.universe.arch",
     "associations": [
-      "Service"
+      "Pilot"
     ],
     "dependencies": [
-      "Request"
+      "MissionControl",
+      "Toolkit"
     ],
     "aggregations": [
-      "Entity"
+      "DockingBay"
     ],
-    "compositions": []
+    "compositions": [
+      "LifeSupportSystem",
+      "StructuralIntegrity"
+    ]
   },
   {
-    "name": "Service",
-    "type": "class",
-    "visibility": "~",
-    "fields": [
-      {
-        "name": "repository",
-        "type": "Repository",
-        "visibility": "-",
-        "static": false
-      }
-    ],
-    "methods": [
-      {
-        "name": "doSomething",
-        "return_type": "Response",
-        "parameters": [
-          "Request"
-        ],
-        "visibility": "+",
-        "static": false
-      }
-    ],
-    "extends": null,
-    "implements": [],
-    "is_abstract": false,
-    "package": "com.example.arch",
-    "associations": [
-      "Repository"
-    ],
-    "dependencies": [
-      "Response",
-      "Request"
-    ],
-    "aggregations": [],
-    "compositions": []
-  },
-  {
-    "name": "DatabaseRepository",
-    "type": "class",
-    "visibility": "~",
-    "fields": [
-      {
-        "name": "db",
-        "type": "Database",
-        "visibility": "-",
-        "static": false
-      }
-    ],
-    "methods": [],
-    "extends": null,
-    "implements": [
-      "Repository"
-    ],
-    "is_abstract": false,
-    "package": "com.example.arch",
-    "associations": [
-      "Database"
-    ],
-    "dependencies": [],
-    "aggregations": [],
-    "compositions": []
-  },
-  {
-    "name": "Database",
+    "name": "OrbitalStructure",
     "type": "class",
     "visibility": "~",
     "fields": [],
     "methods": [],
     "extends": null,
     "implements": [],
-    "is_abstract": false,
-    "package": "com.example.arch",
+    "is_abstract": true,
+    "package": "com.universe.arch",
     "associations": [],
     "dependencies": [],
     "aggregations": [],
     "compositions": []
   },
   {
-    "name": "Request",
+    "name": "LifeSupportSystem",
     "type": "class",
     "visibility": "~",
     "fields": [],
     "methods": [
       {
-        "name": "getId",
-        "return_type": "String",
+        "name": "checkStatus",
+        "return_type": "void",
         "parameters": [],
         "visibility": "+",
         "static": false
@@ -138,14 +102,14 @@
     "extends": null,
     "implements": [],
     "is_abstract": false,
-    "package": "com.example.arch",
+    "package": "com.universe.arch",
     "associations": [],
     "dependencies": [],
     "aggregations": [],
     "compositions": []
   },
   {
-    "name": "Response",
+    "name": "StructuralIntegrity",
     "type": "class",
     "visibility": "~",
     "fields": [],
@@ -153,14 +117,14 @@
     "extends": null,
     "implements": [],
     "is_abstract": false,
-    "package": "com.example.arch",
+    "package": "com.universe.arch",
     "associations": [],
     "dependencies": [],
     "aggregations": [],
     "compositions": []
   },
   {
-    "name": "Entity",
+    "name": "DockingBay",
     "type": "class",
     "visibility": "~",
     "fields": [],
@@ -168,126 +132,85 @@
     "extends": null,
     "implements": [],
     "is_abstract": false,
-    "package": "com.example.arch",
+    "package": "com.universe.arch",
     "associations": [],
     "dependencies": [],
     "aggregations": [],
     "compositions": []
   },
   {
-    "name": "Repository",
+    "name": "Pilot",
+    "type": "class",
+    "visibility": "~",
+    "fields": [],
+    "methods": [],
+    "extends": null,
+    "implements": [],
+    "is_abstract": false,
+    "package": "com.universe.arch",
+    "associations": [],
+    "dependencies": [],
+    "aggregations": [],
+    "compositions": []
+  },
+  {
+    "name": "MissionControl",
+    "type": "class",
+    "visibility": "~",
+    "fields": [],
+    "methods": [
+      {
+        "name": "authorize",
+        "return_type": "void",
+        "parameters": [],
+        "visibility": "+",
+        "static": false
+      }
+    ],
+    "extends": null,
+    "implements": [],
+    "is_abstract": false,
+    "package": "com.universe.arch",
+    "associations": [],
+    "dependencies": [],
+    "aggregations": [],
+    "compositions": []
+  },
+  {
+    "name": "Toolkit",
+    "type": "class",
+    "visibility": "~",
+    "fields": [],
+    "methods": [
+      {
+        "name": "calibrate",
+        "return_type": "void",
+        "parameters": [],
+        "visibility": "+",
+        "static": false
+      }
+    ],
+    "extends": null,
+    "implements": [],
+    "is_abstract": false,
+    "package": "com.universe.arch",
+    "associations": [],
+    "dependencies": [],
+    "aggregations": [],
+    "compositions": []
+  },
+  {
+    "name": "IMaintainable",
     "type": "interface",
     "visibility": "~",
     "fields": [],
     "methods": [
       {
-        "name": "find",
-        "return_type": "Response",
-        "parameters": [
-          "String"
-        ],
-        "visibility": "~",
-        "static": false
-      }
-    ],
-    "extends": null,
-    "implements": [],
-    "is_abstract": false,
-    "package": "com.example.arch",
-    "associations": [],
-    "dependencies": [
-      "Response"
-    ],
-    "aggregations": [],
-    "compositions": []
-  },
-  {
-    "name": "User",
-    "type": "class",
-    "visibility": "+",
-    "fields": [
-      {
-        "name": "name",
-        "type": "String",
-        "visibility": "-",
-        "static": false
-      },
-      {
-        "name": "age",
-        "type": "int",
-        "visibility": "-",
-        "static": false
-      }
-    ],
-    "methods": [
-      {
-        "name": "getName",
-        "return_type": "String",
-        "parameters": [],
-        "visibility": "+",
-        "static": false
-      },
-      {
-        "name": "setName",
+        "name": "performMaintenance",
         "return_type": "void",
         "parameters": [
-          "String"
+          "Toolkit"
         ],
-        "visibility": "+",
-        "static": false
-      }
-    ],
-    "extends": null,
-    "implements": [],
-    "is_abstract": false,
-    "package": "com.example",
-    "associations": [],
-    "dependencies": [],
-    "aggregations": [],
-    "compositions": []
-  },
-  {
-    "name": "Employee",
-    "type": "class",
-    "visibility": "+",
-    "fields": [
-      {
-        "name": "employeeId",
-        "type": "String",
-        "visibility": "-",
-        "static": false
-      }
-    ],
-    "methods": [
-      {
-        "name": "getId",
-        "return_type": "String",
-        "parameters": [],
-        "visibility": "+",
-        "static": false
-      }
-    ],
-    "extends": "User",
-    "implements": [
-      "Identifiable"
-    ],
-    "is_abstract": false,
-    "package": "com.example",
-    "associations": [],
-    "dependencies": [],
-    "aggregations": [],
-    "compositions": []
-  },
-  {
-    "name": "Identifiable",
-    "type": "interface",
-    "visibility": "~",
-    "fields": [],
-    "methods": [
-      {
-        "name": "getId",
-        "return_type": "String",
-        "parameters": [],
         "visibility": "~",
         "static": false
       }
@@ -295,33 +218,93 @@
     "extends": null,
     "implements": [],
     "is_abstract": false,
-    "package": "com.example",
+    "package": "com.universe.arch",
+    "associations": [],
+    "dependencies": [
+      "Toolkit"
+    ],
+    "aggregations": [],
+    "compositions": []
+  },
+  {
+    "name": "Starship",
+    "type": "class",
+    "visibility": "+",
+    "fields": [
+      {
+        "name": "core",
+        "type": "WarpCore",
+        "visibility": "-",
+        "static": false
+      },
+      {
+        "name": "drones",
+        "type": "RepairDrone",
+        "visibility": "+",
+        "static": false
+      },
+      {
+        "name": "captain",
+        "type": "Any",
+        "visibility": "+",
+        "static": false
+      },
+      {
+        "name": "shieldGen",
+        "type": "Any",
+        "visibility": "-",
+        "static": false
+      }
+    ],
+    "methods": [
+      {
+        "name": "engage",
+        "return_type": "Unit",
+        "parameters": [
+          "CombatTarget"
+        ],
+        "visibility": "+",
+        "static": false
+      }
+    ],
+    "extends": "SpaceVehicle",
+    "implements": [],
+    "is_abstract": false,
+    "package": "com.universe.fleet",
+    "associations": [],
+    "dependencies": [
+      "CombatTarget"
+    ],
+    "aggregations": [
+      "RepairDrone"
+    ],
+    "compositions": [
+      "WarpCore"
+    ]
+  },
+  {
+    "name": "SpaceVehicle",
+    "type": "class",
+    "visibility": "+",
+    "fields": [],
+    "methods": [],
+    "extends": null,
+    "implements": [],
+    "is_abstract": false,
+    "package": "com.universe.fleet",
     "associations": [],
     "dependencies": [],
     "aggregations": [],
     "compositions": []
   },
   {
-    "name": "Product",
+    "name": "WarpCore",
     "type": "class",
     "visibility": "+",
-    "fields": [
-      {
-        "name": "id",
-        "type": "String",
-        "visibility": "+",
-        "static": false
-      },
-      {
-        "name": "name",
-        "type": "String",
-        "visibility": "+",
-        "static": false
-      }
-    ],
+    "fields": [],
     "methods": [
       {
-        "name": "display",
+        "name": "outputPower",
         "return_type": "Unit",
         "parameters": [],
         "visibility": "+",
@@ -331,82 +314,77 @@
     "extends": null,
     "implements": [],
     "is_abstract": false,
-    "package": "com.example",
+    "package": "com.universe.fleet",
     "associations": [],
     "dependencies": [],
     "aggregations": [],
     "compositions": []
   },
   {
-    "name": "Shape",
+    "name": "RepairDrone",
+    "type": "class",
+    "visibility": "+",
+    "fields": [],
+    "methods": [],
+    "extends": null,
+    "implements": [],
+    "is_abstract": false,
+    "package": "com.universe.fleet",
+    "associations": [],
+    "dependencies": [],
+    "aggregations": [],
+    "compositions": []
+  },
+  {
+    "name": "Captain",
+    "type": "class",
+    "visibility": "+",
+    "fields": [],
+    "methods": [],
+    "extends": null,
+    "implements": [],
+    "is_abstract": false,
+    "package": "com.universe.fleet",
+    "associations": [],
+    "dependencies": [],
+    "aggregations": [],
+    "compositions": []
+  },
+  {
+    "name": "ShieldGenerator",
+    "type": "class",
+    "visibility": "+",
+    "fields": [],
+    "methods": [],
+    "extends": null,
+    "implements": [],
+    "is_abstract": false,
+    "package": "com.universe.fleet",
+    "associations": [],
+    "dependencies": [],
+    "aggregations": [],
+    "compositions": []
+  },
+  {
+    "name": "CombatTarget",
     "type": "class",
     "visibility": "+",
     "fields": [],
     "methods": [
       {
-        "name": "area",
-        "return_type": "Double",
-        "parameters": [],
+        "name": "takeDamage",
+        "return_type": "Unit",
+        "parameters": [
+          "Int"
+        ],
         "visibility": "+",
         "static": false
       }
     ],
     "extends": null,
     "implements": [],
-    "is_abstract": true,
-    "package": "com.example",
-    "associations": [],
-    "dependencies": [],
-    "aggregations": [],
-    "compositions": []
-  },
-  {
-    "name": "Circle",
-    "type": "class",
-    "visibility": "+",
-    "fields": [
-      {
-        "name": "radius",
-        "type": "Double",
-        "visibility": "+",
-        "static": false
-      }
-    ],
-    "methods": [
-      {
-        "name": "area",
-        "return_type": "Double",
-        "parameters": [],
-        "visibility": "+",
-        "static": false
-      }
-    ],
-    "extends": "Shape",
-    "implements": [],
     "is_abstract": false,
-    "package": "com.example",
-    "associations": [],
-    "dependencies": [],
-    "aggregations": [],
-    "compositions": []
-  },
-  {
-    "name": "AppConfig",
-    "type": "object",
-    "visibility": "+",
-    "fields": [
-      {
-        "name": "version",
-        "type": "Any",
-        "visibility": "+",
-        "static": false
-      }
-    ],
-    "methods": [],
-    "extends": null,
-    "implements": [],
-    "is_abstract": false,
-    "package": "com.example",
+    "package": "com.universe.fleet",
     "associations": [],
     "dependencies": [],
     "aggregations": [],
