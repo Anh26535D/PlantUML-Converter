@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -6,8 +6,6 @@ import {
   Background,
   useNodesState,
   useEdgesState,
-  addEdge,
-  reconnectEdge,
   useReactFlow,
   MarkerType,
   BackgroundVariant,
@@ -21,7 +19,22 @@ import { toPng } from 'html-to-image';
 import { ClassNode } from './components/ClassNode';
 import { PackageNode } from './components/PackageNode';
 import { EditableEdge } from './components/EditableEdge';
-import { Save, Plus, Trash2, X, Settings, Type, Download, MousePointer2, Hand } from 'lucide-react';
+import {
+  Save,
+  Download,
+  MousePointer2,
+  Hand,
+  Code,
+  LayoutDashboard,
+  CheckCircle2,
+  AlertCircle,
+  Type,
+  Plus,
+  Trash2,
+  Zap
+} from 'lucide-react';
+import { parseAML, generateAML } from './utils/aml-logic';
+import { getLayoutedElements } from './utils/layout';
 
 const nodeTypes = {
   class: ClassNode,
@@ -45,32 +58,25 @@ const COLORS = [
   'rgba(255, 255, 255, 0.9)', // White
 ];
 
-const FONT_SIZES = [10, 12, 14, 16, 18, 20, 24, 32, 40];
-
-interface ContextMenuState {
-  x: number;
-  y: number;
-  edgeId?: string;
-  nodeId?: string;
-  vertexIndex?: number;
-  clientX: number;
-  clientY: number;
-}
-
 function FlowCanvas() {
-  const [nodes, setNodes, onNodesChange] = useNodesState<any>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<any>([]);
-  const [isSaving, setIsSaving] = useState(false);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+  const [amlCode, setAmlCode] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
-  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
-  const [fontSizeTarget, setFontSizeTarget] = useState<'header' | 'fields' | 'methods'>('header');
+  const [showCode, setShowCode] = useState(true);
+  const [syncStatus, setSyncStatus] = useState<'synced' | 'error' | 'syncing'>('synced');
+  const [contextMenu, setContextMenu] = useState<any>(null);
 
-  const { screenToFlowPosition, getNodes } = useReactFlow();
+  const { screenToFlowPosition, setViewport, fitView } = useReactFlow();
 
-  // 1. Initial Data Fetching
+  const isUpdatingFromCode = useRef(false);
+  const isEditingCode = useRef(false);
+
+  // 1. Initial Load from model.json and layout.json
   useEffect(() => {
-    const fetchData = async () => {
+    const loadInitialData = async () => {
       try {
         const [modelRes, layoutRes] = await Promise.all([
           fetch(`${API_BASE}/model`),
@@ -80,524 +86,465 @@ function FlowCanvas() {
         const modelData = await modelRes.json();
         const layoutData = await layoutRes.json();
         const positions = layoutData.positions || {};
-        const edgePersistence = layoutData.edges || {};
+        const hasSavedPositions = Object.keys(positions).length > 0;
 
-        const packageNodes: any[] = [];
-        const classNodes: any[] = [];
-        const namespaces = new Set<string>();
+        const initialNodes: Node[] = [];
+        const initialEdges: Edge[] = [];
+        const packageNodes: Record<string, Node> = {};
 
+        // Process Packages
         modelData.forEach((cls: any) => {
-          const pkg = cls.package?.trim();
-          if (pkg) namespaces.add(pkg);
-        });
-
-        const sortedNamespaces = Array.from(namespaces).sort();
-        const pkgGridCols = Math.ceil(Math.sqrt(sortedNamespaces.length || 1));
-
-        sortedNamespaces.forEach((ns, nsIndex) => {
-          const saved = positions[`pkg-${ns}`] || {};
-          const classesInPkg = modelData.filter((c: any) => c.package?.trim() === ns);
-
-          if (classesInPkg.length === 0) return;
-
-          const childrenCount = classesInPkg.length;
-          const colsInPkg = Math.ceil(Math.sqrt(childrenCount || 1));
-          const rowsInPkg = Math.ceil(childrenCount / colsInPkg);
-          const estimatedWidth = colsInPkg * 420 + 120;
-          const estimatedHeight = rowsInPkg * 500 + 150;
-
-          const pkgCol = nsIndex % pkgGridCols;
-          const pkgRow = Math.floor(nsIndex / pkgGridCols);
-          const defaultX = pkgCol * 1200;
-          const defaultY = pkgRow * 1100;
-
-          packageNodes.push({
-            id: `pkg-${ns}`,
-            type: 'package',
-            data: {
-              label: ns,
-              color: saved.color,
-              fontSize: saved.fontSize || 18
-            },
-            position: saved.position || { x: defaultX, y: defaultY },
-            style: { width: saved.width || estimatedWidth, height: saved.height || estimatedHeight },
-            zIndex: -1,
-            dragHandle: '.custom-drag-handle',
-          });
-
-          classesInPkg.forEach((cls: any, clsIndex: number) => {
-            const classSaved = positions[cls.name] || {};
-            classNodes.push({
-              id: cls.name,
-              type: 'class',
-              parentId: `pkg-${ns}`,
-              extent: 'parent',
+          if (cls.package && !packageNodes[cls.package]) {
+            const pkgId = `pkg-${cls.package}`;
+            const pkgLayout = positions[pkgId] || {};
+            packageNodes[cls.package] = {
+              id: pkgId,
+              type: 'package',
+              position: pkgLayout.position || { x: 50, y: 50 },
+              style: { width: pkgLayout.width || 500, height: pkgLayout.height || 400 },
               data: {
-                ...cls,
-                fontSize: classSaved.fontSize || 18,
-                fieldFontSize: classSaved.fieldFontSize || 14,
-                methodFontSize: classSaved.methodFontSize || 14,
+                label: cls.package,
+                color: pkgLayout.color || COLORS[Object.keys(packageNodes).length % COLORS.length]
               },
-              position: classSaved.position || {
-                x: 60 + (clsIndex % colsInPkg) * 420,
-                y: 80 + Math.floor(clsIndex / colsInPkg) * 500
-              },
-            });
-          });
+              zIndex: -1,
+              dragHandle: '.custom-drag-handle',
+            };
+            initialNodes.push(packageNodes[cls.package]);
+          }
         });
 
-        const nodeIds = new Set(modelData.map((cls: any) => cls.name));
-        const initialEdges: any[] = [];
+        // Process Classes
         modelData.forEach((cls: any) => {
-          const source = cls.name;
-          const createEdge = (target: string, type: string, style: any = {}, marker: any = {}) => {
-            if (!nodeIds.has(target)) return;
-            const edgeId = `${source}-${type}-${target}`;
-            const savedEdge = edgePersistence[edgeId] || {};
+          const layout = positions[cls.name] || {};
+          initialNodes.push({
+            id: cls.name,
+            type: 'class',
+            position: layout.position || { x: 100, y: 100 },
+            parentId: cls.package ? `pkg-${cls.package}` : undefined,
+            extent: cls.package ? 'parent' : undefined,
+            data: {
+              ...cls,
+              label: cls.name,
+              fontSize: layout.fontSize || 18,
+              fieldFontSize: layout.fieldFontSize || 14,
+              methodFontSize: layout.methodFontSize || 14
+            },
+          });
+
+          // Edges extraction
+          const relations = [
+            ...(cls.extends ? [{ target: cls.extends, type: 'inheritance', op: '--|>' }] : []),
+            ...(cls.implements?.map((i: string) => ({ target: i, type: 'realization', op: '..|>' })) || []),
+            ...(cls.associations?.map((a: string) => ({ target: a, type: 'association', op: '->' })) || []),
+            ...(cls.aggregations?.map((a: string) => ({ target: a, type: 'aggregation', op: 'o--' })) || []),
+            ...(cls.compositions?.map((c: string) => ({ target: c, type: 'composition', op: '*--' })) || []),
+            ...(cls.dependencies?.map((d: string) => ({ target: d, type: 'dependency', op: '..>' })) || [])
+          ];
+
+          relations.forEach((rel: any) => {
+            const edgeId = `e-${cls.name}-${rel.target}-${rel.type}`;
+            const edgeLayout = positions[edgeId] || {};
+
             initialEdges.push({
               id: edgeId,
-              source, target,
-              sourceHandle: savedEdge.sourceHandle || 'b2',
-              targetHandle: savedEdge.targetHandle || 't2',
+              source: cls.name,
+              target: rel.target,
               type: 'editable',
-              data: { vertices: savedEdge.vertices || [] },
-              markerEnd: { type: MarkerType.ArrowClosed, color: style.stroke || '#334155', width: 25, height: 25 },
-              style: { strokeWidth: 3, ...style },
-              reconnectable: true,
-              ...marker
+              data: {
+                label: rel.type,
+                vertices: edgeLayout.vertices || []
+              },
+              markerEnd: { type: MarkerType.ArrowClosed, color: '#1e293b' },
+              style: {
+                strokeWidth: 2,
+                stroke: '#1e293b',
+                strokeDasharray: (rel.op.includes('..') || rel.type === 'dependency') ? '5,5' : '0'
+              }
             });
-          };
-          if (cls.extends) createEdge(cls.extends, 'extends');
-
-          cls.implements?.forEach((impl: string) =>
-            createEdge(impl, 'implements', { strokeDasharray: '5,5' })
-          );
-
-          cls.associations?.forEach((assoc: string, i: number) =>
-            createEdge(assoc, `assoc-${i}`, { stroke: '#475569' })
-          );
-
-          cls.aggregations?.forEach((agg: string, i: number) =>
-            createEdge(agg, `agg-${i}`, { stroke: '#475569' }, {
-              markerStart: { type: MarkerType.ArrowClosed, color: '#475569', width: 20, height: 20 }
-            })
-          );
-
-          cls.compositions?.forEach((comp: string, i: number) =>
-            createEdge(comp, `comp-${i}`, { stroke: '#1e293b', strokeWidth: 4 }, {
-              markerStart: { type: MarkerType.ArrowClosed, color: '#1e293b', width: 20, height: 20 }
-            })
-          );
-
-          cls.dependencies?.forEach((dep: string, i: number) =>
-            createEdge(dep, `dep-${i}`, { stroke: '#94a3b8', strokeDasharray: '3,3' })
-          );
+          });
         });
 
-        setNodes([...packageNodes, ...classNodes]);
-        setEdges(initialEdges);
-      } catch (err) {
-        console.error('Failed to load data:', err);
-      }
-    };
-    fetchData();
-  }, [setNodes, setEdges]);
-
-  // 2. Event Listeners
-  useEffect(() => {
-    const handleMove = (e: any) => {
-      const { edgeId, vertexIndex, clientX, clientY } = e.detail;
-      const { x, y } = screenToFlowPosition({ x: clientX, y: clientY });
-      setEdges((eds: any[]) => eds.map((edge) => {
-        if (edge.id === edgeId) {
-          const newVertices = [...((edge.data?.vertices as any[]) || [])];
-          newVertices[vertexIndex] = { x, y };
-          return { ...edge, data: { ...edge.data, vertices: newVertices } };
+        if (!hasSavedPositions) {
+          const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(initialNodes, initialEdges);
+          setNodes(layoutedNodes);
+          setEdges(layoutedEdges);
+          setAmlCode(generateAML(layoutedNodes, layoutedEdges));
+        } else {
+          setNodes(initialNodes);
+          setEdges(initialEdges);
+          setAmlCode(generateAML(initialNodes, initialEdges));
         }
-        return edge;
-      }));
-    };
 
-    const handleHandleContextMenu = (e: any) => {
-      const { edgeId, vertexIndex, clientX, clientY } = e.detail;
-      setContextMenu({ x: clientX, y: clientY, edgeId, vertexIndex, clientX, clientY });
+        if (layoutData.viewport) {
+          setViewport(layoutData.viewport);
+        }
+      } catch (e) {
+        console.error('Failed to load chart data:', e);
+      }
     };
+    loadInitialData();
+  }, [setNodes, setEdges, setViewport]);
 
-    window.addEventListener('waypoint-move', handleMove);
-    window.addEventListener('waypoint-context-menu', handleHandleContextMenu);
-    return () => {
-      window.removeEventListener('waypoint-move', handleMove);
-      window.removeEventListener('waypoint-context-menu', handleHandleContextMenu);
-    };
-  }, [setEdges, screenToFlowPosition]);
+  const onLayout = useCallback(() => {
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges);
+    setNodes([...layoutedNodes]);
+    setEdges([...layoutedEdges]);
+    setTimeout(() => fitView(), 100);
+  }, [nodes, edges, setNodes, setEdges, fitView]);
 
-  const onEdgeContextMenu = useCallback((event: React.MouseEvent, edge: Edge) => {
+  // 2. SYNC: Code -> Diagram
+  const handleAmlChange = (newCode: string) => {
+    setAmlCode(newCode);
+    setSyncStatus('syncing');
+
+    try {
+      isUpdatingFromCode.current = true;
+      const { nodes: parsedNodes, edges: parsedEdges } = parseAML(newCode);
+
+      const updatedNodes = parsedNodes.map(pn => {
+        const existing = nodes.find(n => n.id === pn.id);
+        if (existing) {
+          return {
+            ...pn,
+            position: existing.position,
+            style: existing.style,
+            data: { ...pn.data, color: existing.data.color, fontSize: existing.data.fontSize }
+          };
+        }
+        return pn;
+      });
+
+      setNodes(updatedNodes);
+      setEdges(parsedEdges);
+      setSyncStatus('synced');
+    } catch (e) {
+      setSyncStatus('error');
+    } finally {
+      setTimeout(() => {
+        isUpdatingFromCode.current = false;
+      }, 200);
+    }
+  };
+
+  // 3. SYNC: Diagram -> Code
+  useEffect(() => {
+    if (isUpdatingFromCode.current || isEditingCode.current) return;
+
+    const debounce = setTimeout(() => {
+      const currentAML = generateAML(nodes, edges);
+      if (currentAML && currentAML !== amlCode) {
+        setAmlCode(currentAML);
+      }
+    }, 1500);
+
+    return () => clearTimeout(debounce);
+  }, [nodes, edges, amlCode]);
+
+  // 7. Drag and Drop from Palette
+  const onDragStart = (event: React.DragEvent, nodeType: string) => {
+    event.dataTransfer.setData('application/reactflow', nodeType);
+    event.dataTransfer.effectAllowed = 'move';
+  };
+
+  const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
-    setContextMenu({ x: event.clientX, y: event.clientY, edgeId: edge.id, clientX: event.clientX, clientY: event.clientY });
+    event.dataTransfer.dropEffect = 'move';
   }, []);
 
-  const onNodeContextMenu = useCallback((event: React.MouseEvent, node: Node) => {
-    event.preventDefault();
-    setContextMenu({ x: event.clientX, y: event.clientY, nodeId: node.id, clientX: event.clientX, clientY: event.clientY });
-    setFontSizeTarget('header');
-  }, []);
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
 
-  const onPaneContextMenu = useCallback((event: MouseEvent | React.MouseEvent) => {
-    event.preventDefault();
-    const clientX = 'clientX' in event ? event.clientX : (event as any).originalEvent.clientX;
-    const clientY = 'clientY' in event ? event.clientY : (event as any).originalEvent.clientY;
-    setContextMenu({ x: clientX, y: clientY, clientX, clientY });
-  }, []);
+      const type = event.dataTransfer.getData('application/reactflow');
+      if (!type) return;
 
-  const closeContextMenu = useCallback(() => setContextMenu(null), []);
+      const position = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
 
-  const updatePackageColor = useCallback((color: string) => {
-    if (!contextMenu?.nodeId) return;
-    setNodes((nds) => nds.map((node) => {
-      if (node.id === contextMenu.nodeId) {
-        return { ...node, data: { ...node.data, color } };
-      }
-      return node;
-    }));
-    closeContextMenu();
-  }, [contextMenu, setNodes, closeContextMenu]);
+      const newNode: Node = {
+        id: `New${type}${Date.now()}`,
+        type: type === 'package' ? 'package' : 'class',
+        position,
+        data: {
+          label: `New${type}`,
+          type: type === 'package' ? undefined : type,
+          fields: [],
+          methods: []
+        },
+      };
 
-  const updateFontSize = useCallback((fontSize: number) => {
-    if (!contextMenu?.nodeId) return;
-    setNodes((nds) => nds.map((node) => {
-      if (node.id === contextMenu.nodeId) {
-        const fieldMap: Record<string, string> = {
-          header: 'fontSize',
-          fields: 'fieldFontSize',
-          methods: 'methodFontSize'
-        };
-        const key = fieldMap[fontSizeTarget] || 'fontSize';
-        return { ...node, data: { ...node.data, [key]: fontSize } };
-      }
-      return node;
-    }));
-  }, [contextMenu, fontSizeTarget, setNodes]);
-
-  const addWaypoint = useCallback(() => {
-    if (!contextMenu?.edgeId) return;
-    const { x, y } = screenToFlowPosition({ x: contextMenu.clientX, y: contextMenu.clientY });
-    setEdges((eds: any[]) => eds.map((e) => {
-      if (e.id === contextMenu.edgeId) {
-        const vertices = (e.data?.vertices as any[]) || [];
-        return { ...e, data: { ...e.data, vertices: [...vertices, { x, y }] } };
-      }
-      return e;
-    }));
-    closeContextMenu();
-  }, [contextMenu, screenToFlowPosition, setEdges, closeContextMenu]);
-
-  const removeWaypoint = useCallback(() => {
-    if (!contextMenu?.edgeId || contextMenu.vertexIndex === undefined) return;
-    setEdges((eds: any[]) => eds.map((e) => {
-      if (e.id === contextMenu.edgeId) {
-        const vertices = [...((e.data?.vertices as any[]) || [])];
-        vertices.splice(contextMenu.vertexIndex!, 1);
-        return { ...e, data: { ...e.data, vertices } };
-      }
-      return e;
-    }));
-    closeContextMenu();
-  }, [contextMenu, setEdges, closeContextMenu]);
+      setNodes((nds) => nds.concat(newNode));
+    },
+    [screenToFlowPosition, setNodes]
+  );
 
   const saveLayout = async () => {
     setIsSaving(true);
-    const posData = nodes.reduce<Record<string, any>>((acc, node) => {
-      const nodeData = node.data as any;
-      acc[node.id] = {
-        position: node.position,
-        fontSize: nodeData.fontSize,
-        fieldFontSize: nodeData.fieldFontSize,
-        methodFontSize: nodeData.methodFontSize,
-      };
-      if (node.type === 'package') {
-        const width = node.measured?.width || (node.style?.width as number);
-        const height = node.measured?.height || (node.style?.height as number);
-        acc[node.id].width = width;
-        acc[node.id].height = height;
-        acc[node.id].color = nodeData.color;
-      }
-      return acc;
-    }, {});
-
-    const edgePersistence = edges.reduce<Record<string, any>>((acc: any, edge: any) => ({
-      ...acc,
-      [edge.id]: {
-        vertices: (edge.data?.vertices as any[]) || [],
-        sourceHandle: edge.sourceHandle,
-        targetHandle: edge.targetHandle
-      }
-    }), {});
-
     try {
+      const posData: Record<string, any> = {};
+      nodes.forEach(node => {
+        posData[node.id] = {
+          position: node.position,
+          width: node.measured?.width || (node.style?.width as number),
+          height: node.measured?.height || (node.style?.height as number),
+          color: node.data.color,
+          fontSize: node.data.fontSize,
+          fieldFontSize: node.data.fieldFontSize,
+          methodFontSize: node.data.methodFontSize
+        };
+      });
+
+      edges.forEach(edge => {
+        if (edge.data?.vertices) {
+          posData[edge.id] = { vertices: edge.data.vertices };
+        }
+      });
+
       await fetch(`${API_BASE}/layout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ positions: posData, edges: edgePersistence })
+        body: JSON.stringify({ positions: posData }),
       });
-      alert('Architectural design saved!');
-    } catch (err) {
-      console.error('Save failed:', err);
+    } catch (e) {
+      alert('Failed to save layout');
     } finally {
       setIsSaving(false);
     }
   };
 
   const exportAsImage = async () => {
-    const allNodes = getNodes();
-    const selectedNodes = allNodes.filter((node) => node.selected);
-    const targetNodes = selectedNodes.length > 0 ? selectedNodes : allNodes;
-
-    if (allNodes.length === 0) return;
-
     setIsExporting(true);
     const viewport = document.querySelector('.react-flow__viewport') as HTMLElement;
-    if (!viewport) {
-      setIsExporting(false);
-      return;
-    }
+    if (!viewport) return;
 
     try {
-      const padding = 60;
-
-      // Calculate bounds of target nodes
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-
-      targetNodes.forEach(node => {
-        const x = node.position.x;
-        const y = node.position.y;
-        const w = node.measured?.width || (node.style?.width as number) || 200;
-        const h = node.measured?.height || (node.style?.height as number) || 150;
-
-        minX = Math.min(minX, x);
-        minY = Math.min(minY, y);
-        maxX = Math.max(maxX, x + w);
-        maxY = Math.max(maxY, y + h);
-      });
-
-      const width = maxX - minX;
-      const height = maxY - minY;
-
-      const targetIds = new Set(targetNodes.map(n => n.id));
-
-      // For selection mode, we only want edges between selected nodes
-      // For full mode, we want all edges
-      const targetEdgeIds = new Set(
-        edges.filter(e => {
-          if (selectedNodes.length > 0) {
-            return targetIds.has(e.source) && targetIds.has(e.target);
-          }
-          return true;
-        }).map(e => e.id)
-      );
-
-      const exportConfig: any = {
-        backgroundColor: '#fdfdfd',
-        pixelRatio: 2,
-        skipFonts: true,
-        width: width + padding * 2,
-        height: height + padding * 2,
-        style: {
-          width: `${width + padding * 2}px`,
-          height: `${height + padding * 2}px`,
-          transform: `translate(${-minX + padding}px, ${-minY + padding}px) scale(1)`,
-        },
-        filter: (domNode: any) => {
-          const id = domNode.getAttribute?.('data-id');
-          const isNode = domNode.classList?.contains('react-flow__node');
-          const isEdge = domNode.classList?.contains('react-flow__edge');
-
-          if (isNode || isEdge) {
-            if (selectedNodes.length > 0) {
-              return targetIds.has(id) || targetEdgeIds.has(id);
-            }
-            return true; // Keep all if it's a full export
-          }
-
-          if (domNode.classList?.contains('react-flow__background')) return false;
-          return true;
-        }
-      };
-
-      const dataUrl = await toPng(viewport, exportConfig);
+      const dataUrl = await toPng(viewport, { backgroundColor: '#fdfdfd', pixelRatio: 2 });
       const link = document.createElement('a');
-      const suffix = selectedNodes.length > 0 ? 'selection' : 'full';
-      link.download = `aetheris-${suffix}-${new Date().toISOString().slice(0, 10)}.png`;
+      link.download = `architecture-${Date.now()}.png`;
       link.href = dataUrl;
       link.click();
     } catch (err) {
       console.error('Export failed:', err);
-      alert('Failed to export image. Please try again.');
     } finally {
       setIsExporting(false);
-      closeContextMenu();
     }
   };
 
-  return (
-    <div className="app-container" onClick={closeContextMenu}>
-      <header className="main-header">
-        <div className="header-content">
-          <div className="title-section">
-            <h1 className="title">
-              <span className="icon">🌌</span> Aetheris Architect
-            </h1>
-            <p className="subtitle">Interactive Code Visualizer</p>
-          </div>
-          <div className="header-actions" style={{ display: 'flex', gap: '12px' }}>
-            <div className="mode-toggle" style={{ display: 'flex', background: '#f1f5f9', padding: '4px', borderRadius: '8px', marginRight: '8px' }}>
-              <button
-                className={`mode-button ${!isSelectMode ? 'active' : ''}`}
-                onClick={() => setIsSelectMode(false)}
-                title="Pan Mode"
-                style={{ padding: '6px 10px', borderRadius: '6px', border: 'none', background: !isSelectMode ? '#fff' : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', boxShadow: !isSelectMode ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}
-              >
-                <Hand size={16} color={!isSelectMode ? '#3b82f6' : '#64748b'} />
-              </button>
-              <button
-                className={`mode-button ${isSelectMode ? 'active' : ''}`}
-                onClick={() => setIsSelectMode(true)}
-                title="Selection Mode"
-                style={{ padding: '6px 10px', borderRadius: '6px', border: 'none', background: isSelectMode ? '#fff' : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', boxShadow: isSelectMode ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}
-              >
-                <MousePointer2 size={16} color={isSelectMode ? '#3b82f6' : '#64748b'} />
-              </button>
-            </div>
+  const onNodeContextMenu = useCallback((event: React.MouseEvent, node: Node) => {
+    event.preventDefault();
+    setContextMenu({ x: event.clientX, y: event.clientY, nodeId: node.id, type: 'node', clientX: event.clientX, clientY: event.clientY });
+  }, []);
 
-            <button className={`save-button secondary ${isExporting ? 'loading' : ''}`} onClick={exportAsImage} disabled={isExporting} style={{ background: '#64748b' }}>
-              <Download size={18} />
-              {isExporting ? 'Exporting...' : nodes.some(n => n.selected) ? 'Export Selection' : 'Export Image'}
+  const onEdgeContextMenu = useCallback((event: React.MouseEvent, edge: Edge) => {
+    event.preventDefault();
+    setContextMenu({ x: event.clientX, y: event.clientY, edgeId: edge.id, type: 'edge', clientX: event.clientX, clientY: event.clientY });
+  }, []);
+
+  const onPaneContextMenu = useCallback((event: React.MouseEvent | MouseEvent) => {
+    event.preventDefault();
+    setContextMenu({ x: event.clientX, y: event.clientY, type: 'pane', clientX: event.clientX, clientY: event.clientY });
+  }, []);
+
+  const addWaypoint = useCallback(() => {
+    if (!contextMenu?.edgeId) return;
+    const { x, y } = screenToFlowPosition({ x: contextMenu.clientX, y: contextMenu.clientY });
+    setEdges(eds => eds.map(e => e.id === contextMenu.edgeId ? { ...e, data: { ...e.data, vertices: [...((e.data?.vertices as any[]) || []), { x, y }] } } : e));
+    setContextMenu(null);
+  }, [contextMenu, screenToFlowPosition, setEdges]);
+
+  return (
+    <div className="app-container">
+      <header className="app-header">
+        <div className="header-left">
+          <div className="brand">
+            <span className="brand-icon">🌌</span>
+            <div className="brand-text">
+              <h1>Aetheris Architect</h1>
+              <p>State-of-the-art Architectural Visualizer</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="header-actions">
+          <button
+            className={`action-btn secondary ${showCode ? 'active' : ''}`}
+            onClick={() => setShowCode(!showCode)}
+          >
+            <Code size={18} />
+            {showCode ? 'Hide Editor' : 'Show Editor'}
+          </button>
+
+          <div className="mode-toggle">
+            <button
+              className={`mode-btn ${!isSelectMode ? 'active' : ''}`}
+              onClick={() => setIsSelectMode(false)}
+            >
+              <Hand size={18} />
+              Pan
             </button>
-            <button className={`save-button ${isSaving ? 'loading' : ''}`} onClick={saveLayout} disabled={isSaving}>
-              <Save size={18} />
-              {isSaving ? 'Saving...' : 'Save Layout'}
+            <button
+              className={`mode-btn ${isSelectMode ? 'active' : ''}`}
+              onClick={() => setIsSelectMode(true)}
+            >
+              <MousePointer2 size={18} />
+              Select
             </button>
           </div>
+
+          <button className="action-btn secondary" onClick={onLayout}>
+            <Zap size={18} />
+            Auto Layout
+          </button>
+
+          <button className="action-btn secondary" onClick={exportAsImage} disabled={isExporting}>
+            <Download size={18} />
+            {isExporting ? 'Exporting...' : 'Export Image'}
+          </button>
+
+          <button className="action-btn primary" onClick={saveLayout} disabled={isSaving}>
+            <Save size={18} />
+            {isSaving ? 'Saving...' : 'Save Layout'}
+          </button>
         </div>
       </header>
 
-      <div className={`canvas-wrapper ${isSelectMode ? 'selection-mode' : ''}`}>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={(params) => setEdges((eds: any) => addEdge(params, eds))}
-          onReconnect={(oldEdge, newConnection) => setEdges((els: any) => reconnectEdge(oldEdge, newConnection, els))}
-          onEdgeContextMenu={onEdgeContextMenu}
-          onNodeContextMenu={onNodeContextMenu}
-          onPaneContextMenu={onPaneContextMenu}
-          nodeTypes={nodeTypes}
-          edgeTypes={edgeTypes}
-          minZoom={0.05}
-          maxZoom={4}
-          selectionOnDrag={isSelectMode}
-          panOnDrag={isSelectMode ? [1, 2] : true}
-          selectionMode={SelectionMode.Partial}
-          fitView
-        >
-          <Controls />
-          <MiniMap zoomable pannable />
-          <Background variant={BackgroundVariant.Dots} color="#94a3b8" gap={25} />
-        </ReactFlow>
-      </div>
-
-      {contextMenu && (
-        <div
-          className="custom-context-menu"
-          style={{ top: contextMenu.y, left: contextMenu.x }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {nodes.some(n => n.selected) && (
-            <div className="context-menu-item" onClick={exportAsImage} style={{ borderBottom: '1px solid #eee', marginBottom: '4px', fontWeight: 'bold', color: '#3b82f6' }}>
-              <Download size={14} /> Export Selection as Image
+      <main className="app-main">
+        {showCode && (
+          <aside className="code-panel">
+            <div className="code-panel-header">
+              <div className="code-panel-title">
+                <Code size={16} />
+                AML Editor
+              </div>
+              <div className={`sync-indicator ${syncStatus}`}>
+                {syncStatus === 'synced' && <><CheckCircle2 size={14} /> Synced</>}
+                {syncStatus === 'syncing' && <>Syncing...</>}
+                {syncStatus === 'error' && <><AlertCircle size={14} /> Syntax Error</>}
+              </div>
             </div>
-          )}
 
-          {contextMenu.edgeId && (
-            <>
-              {contextMenu.vertexIndex === undefined ? (
-                <div className="context-menu-item" onClick={addWaypoint}>
+            <div className="aml-editor-container">
+              <textarea
+                className="aml-editor"
+                value={amlCode}
+                onFocus={() => isEditingCode.current = true}
+                onBlur={() => isEditingCode.current = false}
+                onChange={(e) => handleAmlChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Tab') {
+                    e.preventDefault();
+                    const start = e.currentTarget.selectionStart;
+                    const end = e.currentTarget.selectionEnd;
+                    const newValue = amlCode.substring(0, start) + '    ' + amlCode.substring(end);
+                    setAmlCode(newValue);
+
+                    // Force the cursor to stay after the inserted spaces
+                    const target = e.currentTarget;
+                    requestAnimationFrame(() => {
+                      target.selectionStart = target.selectionEnd = start + 4;
+                    });
+                  }
+                }}
+                spellCheck={false}
+              />
+            </div>
+
+            <div className="component-palette">
+              <div className="palette-title">
+                <LayoutDashboard size={12} />
+                Component Palette
+              </div>
+              <div className="palette-items">
+                <div className="palette-item" onDragStart={(e) => onDragStart(e, 'class')} draggable>
+                  <Type size={14} /> Class
+                </div>
+                <div className="palette-item" onDragStart={(e) => onDragStart(e, 'interface')} draggable>
+                  <Type size={14} /> Interface
+                </div>
+                <div className="palette-item" onDragStart={(e) => onDragStart(e, 'enum')} draggable>
+                  <Type size={14} /> Enum
+                </div>
+                <div className="palette-item" onDragStart={(e) => onDragStart(e, 'package')} draggable>
+                  <Plus size={14} /> Package
+                </div>
+              </div>
+            </div>
+          </aside>
+        )}
+
+        <div className={`canvas-wrapper ${isSelectMode ? 'selection-mode' : ''}`}>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
+            onNodeContextMenu={onNodeContextMenu}
+            onEdgeContextMenu={onEdgeContextMenu}
+            onPaneContextMenu={onPaneContextMenu}
+            onPaneClick={() => setContextMenu(null)}
+            onDragOver={onDragOver}
+            onDrop={onDrop}
+            selectionMode={isSelectMode ? SelectionMode.Partial : (undefined as any)}
+            panOnDrag={!isSelectMode}
+            selectionOnDrag={isSelectMode}
+            minZoom={0.05}
+            maxZoom={4}
+            fitView
+          >
+            <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#e2e8f0" />
+            <Controls />
+            <MiniMap
+              nodeColor={(n: any) => n.data?.color || '#eee'}
+              maskColor="rgba(241, 245, 249, 0.7)"
+              style={{ background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+            />
+          </ReactFlow>
+
+          {contextMenu && (
+            <div
+              className="context-menu"
+              style={{ top: contextMenu.y, left: contextMenu.x }}
+            >
+              {contextMenu.type === 'edge' && (
+                <button onClick={addWaypoint} className="menu-item">
                   <Plus size={14} /> Add Waypoint
-                </div>
-              ) : (
-                <div className="context-menu-item delete" onClick={removeWaypoint}>
-                  <Trash2 size={14} /> Remove Waypoint
-                </div>
+                </button>
               )}
-            </>
-          )}
-
-          {contextMenu.nodeId && (
-            <div className="context-menu-section">
-              <div className="context-menu-label" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Type size={14} /> Font Control
-              </div>
-
-              {nodes.find(n => n.id === contextMenu.nodeId)?.type === 'class' && (
-                <div className="target-selector">
-                  {['header', 'fields', 'methods'].map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setFontSizeTarget(t as any)}
-                      className={`font-size-button ${fontSizeTarget === t ? 'active' : ''}`}
-                      style={{ flex: 1, textTransform: 'capitalize' }}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              <div className="font-size-picker">
-                {FONT_SIZES.map((size) => {
-                  const currentNode = nodes.find(n => n.id === contextMenu.nodeId);
-                  const nodeData = currentNode?.data as any;
-                  const currentSize = fontSizeTarget === 'header' ? (nodeData?.fontSize || 16) :
-                    fontSizeTarget === 'fields' ? (nodeData?.fieldFontSize || 14) :
-                      (nodeData?.methodFontSize || 14);
-
-                  return (
-                    <button
-                      key={size}
-                      onClick={() => updateFontSize(size)}
-                      className={`font-size-button ${currentSize === size ? 'active' : ''}`}
-                    >
-                      {size}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {contextMenu.nodeId.startsWith('pkg-') && (
+              {contextMenu.type === 'node' && (
                 <>
-                  <div className="context-menu-label" style={{ borderTop: '1px solid #eee', marginTop: '4px' }}>
-                    <Settings size={14} /> Background
+                  <div className="menu-section">
+                    <span>Background Color</span>
+                    <div className="color-grid">
+                      {COLORS.map(c => (
+                        <button
+                          key={c}
+                          className="color-swatch"
+                          style={{ background: c }}
+                          onClick={() => {
+                            setNodes(nds => nds.map(n => n.id === contextMenu.nodeId ? { ...n, data: { ...n.data, color: c } } : n));
+                            setContextMenu(null);
+                          }}
+                        />
+                      ))}
+                    </div>
                   </div>
-                  <div className="color-picker">
-                    {COLORS.map((c) => (
-                      <div
-                        key={c}
-                        className="color-swatch"
-                        style={{ backgroundColor: c }}
-                        onClick={() => updatePackageColor(c)}
-                      />
-                    ))}
-                  </div>
+                  <button className="menu-item destructive" onClick={() => {
+                    setNodes(nds => nds.filter(n => n.id !== contextMenu.nodeId));
+                    setContextMenu(null);
+                  }}>
+                    <Trash2 size={14} /> Delete Component
+                  </button>
                 </>
               )}
+              <button className="menu-item" onClick={() => setContextMenu(null)}>Close</button>
             </div>
           )}
-
-          <div className="context-menu-item" onClick={closeContextMenu} style={{ borderTop: '1px solid #eee', marginTop: '4px' }}>
-            <X size={14} /> Close Menu
-          </div>
         </div>
-      )}
+      </main>
     </div>
   );
 }
