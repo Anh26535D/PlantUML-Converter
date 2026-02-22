@@ -1,48 +1,36 @@
-# Task Summary: Java/Kotlin to PlantUML Converter
+# 🌌 Task Summary: Aetheris Project
 
 ## Objective
-Implement a tool that automatically generates PlantUML class diagrams from Java and Kotlin source code.
+Build **Aetheris**, an advanced architectural visualization platform that transforms source code into interactive, editable diagrams through a custom modeling DSL and a draggable canvas.
 
 ## Implementation Status
 - [x] **Source Code Parsing**:
     - [x] Java parsing implemented using `javalang`.
     - [x] Kotlin parsing implemented using `tree-sitter-kotlin`.
 - [x] **Relationship Extraction**:
-    - [x] Java: Extends, Implements, Association (fields), Aggregation (collections), Dependency (methods).
-    - [x] Kotlin: Extends, Implements, Association, Aggregation, Dependency.
-- [x] **Package-level grouping**:
-    - [x] Automatic grouping of classes into `package` blocks in PlantUML.
-    - [x] Smart relationship routing (definitions in packages, links outside) to prevent duplication.
-- [x] **Advanced Features**:
-    - [x] **Auto-Layout**: Heuristic-based diagram alignment (Left-to-Right vs Top-to-Bottom).
-    - [x] **Dynamic Spacing**: Nodesep/ranksep adjusted based on diagram complexity.
-    - [x] **Premium Theming**: Clean black & white design with rounded corners.
-- [x] **CLI Interface**:
-    - [x] Implemented with `click`, supporting recursive directory scanning and diagram naming.
-
-## Usage
-Run the following command to generate a diagram:
-```bash
-uv run main.py <source_path> -o <output_file.puml>
-```
-
-Example:
-```bash
-uv run main.py examples -o diagram.puml
-```
-
-## Technical Considerations
-*   **Parsing Strategy**: 
-    *   For Java: Use an AST parser like `javalang` (Python) or `JavaParser` (Java).
-    *   For Kotlin: Use the official Kotlin compiler embeddable or a library like `kotlin-compile-testing` or specialized parsers if using Python.
-*   **Language Choice**: 
-    *   A JVM-based implementation (Java/Kotlin) might be more robust as it can leverage official compiler tools.
-    *   A Python implementation might be quicker for simple scripts but harder for complex Kotlin syntax.
-*   **Scope Limitation**: Initial versions may focus on structural elements (classes/methods) rather than detailed method body analysis.
+    - [x] Full support for Inheritance, Implementation, Association, Aggregation, and Dependency.
+- [x] **Core Rendering (Initial)**:
+    - [x] PlantUML generation with auto-layout and package grouping.
+- [ ] **Aetheris Modeling Language (AML)**:
+    - [ ] Define the `.aml` plain-text specification.
+    - [ ] Implement `AMLGenerator` to replace the dependency on PlantUML syntax.
+- [ ] **Interactive Visualizer**:
+    - [ ] Vite/React-based drag-and-drop canvas.
+    - [ ] Persistent layout engine (`.layout.json`).
+    - [ ] Real-time synchronization between AML source and Visual Canvas.
 
 ## Roadmap
-1.  **Phase 1: Research & Setup** - Identify the best parsing libraries for both languages.
-2.  **Phase 2: Java Support** - Implement parsing and PUML generation for Java.
-3.  **Phase 3: Kotlin Support** - Implement parsing and PUML generation for Kotlin.
-4.  **Phase 4: Optimization & CLI** - Refine the output and add a user-friendly interface.
-5.  **Phase 5: Documentation & Testing** - Finalize the tool and provide usage examples.
+1.  **Phase 1: Research & Setup** - Completed.
+2.  **Phase 2: Multilingual Support** - Completed (Java/Kotlin).
+3.  **Phase 3: AML Evolution** - Shift from PlantUML to the custom Aetheris Modeling Language.
+4.  **Phase 4: The Canvas Stage** - Implement the React Flow-based interactive editor.
+5.  **Phase 5: Layout Persistence** - Implement sidecar JSON logic to preserve user-defined arrangements.
+6.  **Phase 6: Advanced Viz** - Add theme engines, SVG exports, and architectural heatmaps.
+
+## Architecture
+```text
+Source Code (Java/KT) -> Aetheris Parser -> AML Definition (.aml)
+                                               |
+                                               v
+Persistent Layout (.json) <-> Interactive Canvas (React) -> SVG/PDF
+```

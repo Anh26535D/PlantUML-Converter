@@ -1,16 +1,16 @@
-# Java & Kotlin to PlantUML Converter
+# 🌌 Aetheris: The Interactive Code Architect
 
-A sleek command-line tool to automatically generate PlantUML class diagrams from Java and Kotlin source code.
+Aetheris is a next-generation architectural visualization tool that transforms Java and Kotlin source code into interactive, editable, and beautiful diagrams. Unlike static generators, Aetheris decouples code structure from visual layout, giving you total control over how your architecture is presented.
 
-## 🚀 Features
+## 🚀 Key Innovations
 
--   **Dual-Language Support**: Seamlessly parses both `.java` and `.kt` files.
--   **Intelligent Parsing**:
-    -   **Java**: Full AST parsing for classes, interfaces, enums, and inheritance.
-    -   **Kotlin**: Support for primary constructors, properties, objects, and delegation specifiers using Tree-sitter.
--   **Member Extraction**: Captures fields, methods, return types, and visibility modifiers.
--   **Relationship Mapping**: Automatically identifies and maps inheritance (`<|--`) and interface implementations (`<|..`).
--   **Modern Stack**: Built with Python, `uv`, `javalang`, and `tree-sitter`.
+-   **Interactive Canvas**: Drag-and-drop components to create the perfect layout. Your visual arrangements are preserved even as your code evolves.
+-   **Aetheris Modeling Language (AML)**: An independent, human-readable DSL that defines your architecture without the constraints of legacy diagramming engines.
+-   **Intelligent Extraction**:
+    *   **Java**: Deep AST parsing using `javalang`.
+    *   **Kotlin**: Advanced property and relationship mapping via Tree-sitter.
+-   **Relational Intelligence**: Automatically maps complex hierarchies, associations, aggregations, and dependencies.
+-   **Independent Rendering**: Decouple the "What" (structure) from the "Where" (layout).
 
 ## 🛠️ Installation
 
