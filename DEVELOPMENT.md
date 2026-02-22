@@ -33,7 +33,7 @@ aetheris/
 │   ├── kotlin_parser.py  # Kotlin-specific logic
 │   ├── models.py         # Shared data models
 │   ├── aml_generator.py  # Aetheris Modeling Language engine
-│   └── puml_generator.py # Legacy PlantUML support
+│   └── piml_generator.py # Package Infrastructure Modeling Language
 ├── visualizer/           # Interactive Canvas (React/Vite)
 │   ├── src/components/   # Custom React Flow nodes (Class, Package, EditableEdge)
 │   └── src/assets/       # Persistent layout.json and model.json
