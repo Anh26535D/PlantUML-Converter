@@ -6,7 +6,9 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "click>=8.3.1",
+    "fastapi>=0.129.2",
     "javalang>=0.13.0",
     "tree-sitter>=0.25.2",
     "tree-sitter-kotlin>=1.1.0",
+    "uvicorn>=0.41.0",
 ]

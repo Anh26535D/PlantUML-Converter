@@ -24,28 +24,30 @@ This project uses `uv` for lightning-fast dependency management.
 
 ## 📖 Usage
 
-Run the converter by pointing it to a source file or a directory containing your code.
-
+### 1. Extract the Model
+Scan your Java/Kotlin source code and export it to the visualizer assets.
 ```bash
-uv run main.py <source_path> [OPTIONS]
+uv run main.py <source_path> -o visualizer/src/assets/model.json -f json
 ```
 
-### Options:
-
--   `-o, --output TEXT`: Specify the output filename (default: `diagram.puml`).
--   `--help`: Show the help message.
-
-### Examples:
-
-**Convert a whole directory:**
+### 2. Start the Persistence Service
+Launch the local API server to enable "Save Layout" functionality.
 ```bash
-uv run main.py ./src -o project_layout.puml
+uv run python service.py
 ```
 
-**Convert a single file:**
+### 3. Launch the Visualizer
+Open the interactive draggable canvas.
 ```bash
-uv run main.py examples/Sample.kt -o single_class.puml
+cd visualizer
+npm run dev
 ```
+*Navigate to [http://localhost:5173](http://localhost:5173) in your browser.*
+
+### Features in Action:
+- **Design Mode**: Drag class nodes to your desired spatial arrangement.
+- **Persistence**: Click **"Save Layout"** to permanently store positions in `layout.json`.
+- **Code Updates**: Rescan your code anytime; your visual layout stays preserved.
 
 ## 📂 Project Structure
 
