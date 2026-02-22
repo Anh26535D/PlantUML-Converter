@@ -48,7 +48,17 @@ class KotlinParser(BaseParser):
                 name = child.text.decode("utf8")
                 break
         
-        model = ClassModel(name=name, type=class_type, package=package_name)
+        modifiers = self._get_modifiers(node)
+        visibility = self._convert_visibility(modifiers)
+        is_abstract = "abstract" in modifiers
+        
+        model = ClassModel(
+            name=name, 
+            type=class_type, 
+            package=package_name,
+            visibility=visibility,
+            is_abstract=is_abstract
+        )
         
         # Inheritance
         delegation = self._find_child(node, "delegation_specifiers")
@@ -117,18 +127,35 @@ class KotlinParser(BaseParser):
 
         return model
 
+    def _get_modifiers(self, node) -> list[str]:
+        modifiers = []
+        mods_node = self._find_child(node, "modifiers")
+        if mods_node:
+            for mod in mods_node.children:
+                modifiers.append(self._get_text(mod))
+        return modifiers
+
+    def _convert_visibility(self, modifiers: list[str]) -> str:
+        if "public" in modifiers: return "+"
+        if "private" in modifiers: return "-"
+        if "protected" in modifiers: return "#"
+        if "internal" in modifiers: return "~"
+        return "+" # Kotlin default is public
+
     def _parse_class_parameter(self, node) -> FieldModel:
         # Check if it's a val/var
         if not (self._find_child(node, "val") or self._find_child(node, "var")):
             return None
             
+        modifiers = self._get_modifiers(node)
         name = self._get_text(self._find_child(node, "identifier"))
         type_node = self._find_child(node, "user_type") or self._find_child(node, "type")
         prop_type = self._extract_type(type_node) if type_node else "Any"
         
-        return FieldModel(name=name, type=prop_type)
+        return FieldModel(name=name, type=prop_type, visibility=self._convert_visibility(modifiers))
 
     def _parse_property(self, node) -> FieldModel:
+        modifiers = self._get_modifiers(node)
         var_decl = self._find_child(node, "variable_declaration")
         if not var_decl: return None
         
@@ -136,9 +163,10 @@ class KotlinParser(BaseParser):
         type_node = self._find_child(var_decl, "user_type") or self._find_child(var_decl, "type")
         prop_type = self._extract_type(type_node) if type_node else "Any"
         
-        return FieldModel(name=name, type=prop_type)
+        return FieldModel(name=name, type=prop_type, visibility=self._convert_visibility(modifiers))
 
     def _parse_function(self, node) -> MethodModel:
+        modifiers = self._get_modifiers(node)
         name = self._get_text(self._find_child(node, "identifier"))
         ret_type = "Unit"
         params = []
@@ -150,13 +178,11 @@ class KotlinParser(BaseParser):
         if val_params:
             for p in val_params.children:
                 if p.type == "parameter":
-                    # Parameters can have user_type or type
-                    # Actually p.children find "type" which might contain "user_type"
                     p_type_node = self._find_child(p, "type") or self._find_child(p, "user_type")
                     if p_type_node: params.append(self._extract_type(p_type_node))
                     else: params.append("Any")
         
-        return MethodModel(name=name, return_type=ret_type, parameters=params)
+        return MethodModel(name=name, return_type=ret_type, parameters=params, visibility=self._convert_visibility(modifiers))
 
     def _extract_type(self, node) -> str:
         if not node: return "Any"

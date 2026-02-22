@@ -3,17 +3,18 @@ import os
 from pathlib import Path
 from converter.factory import ParserFactory
 from converter.puml_generator import PUMLGenerator
+from converter.aml_generator import AMLGenerator
 
 @click.command()
 @click.argument('path', type=click.Path(exists=True))
-@click.option('--output', '-o', default='diagram.puml', help='Output PlantUML file')
-def main(path, output):
+@click.option('--output', '-o', default='diagram.aml', help='Output file')
+@click.option('--format', '-f', type=click.Choice(['aml', 'puml', 'json']), default='aml', help='Output format (default: aml)')
+def main(path, output, format):
     """
-    Convert Java/Kotlin source code to PlantUML class diagrams.
+    Aetheris: Convert Java/Kotlin source code to architectural diagrams.
     PATH can be a file or a directory.
     """
     parser_factory = ParserFactory()
-    puml_gen = PUMLGenerator()
     
     all_classes = []
     supported_extensions = parser_factory.get_supported_extensions()
@@ -47,12 +48,22 @@ def main(path, output):
         return
 
     diagram_name = Path(output).stem
-    puml_content = puml_gen.generate(all_classes, title=diagram_name)
+    
+    if format == 'aml':
+        generator = AMLGenerator()
+        content = generator.generate(all_classes)
+    elif format == 'json':
+        import json
+        from dataclasses import asdict
+        content = json.dumps([asdict(c) for c in all_classes], indent=2)
+    else:
+        generator = PUMLGenerator()
+        content = generator.generate(all_classes, title=diagram_name)
     
     with open(output, 'w', encoding='utf-8') as f:
-        f.write(puml_content)
+        f.write(content)
     
-    click.echo(f"Successfully generated {output}")
+    click.echo(f"Successfully generated {output} (Format: {format.upper()})")
 
 if __name__ == '__main__':
     main()
