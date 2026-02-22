@@ -1,6 +1,6 @@
-import { Handle, Position } from '@xyflow/react';
+import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 
-interface ClassNodeProps {
+interface ClassNodeProps extends NodeProps {
     data: {
         name: string;
         type: string;
@@ -14,7 +14,7 @@ interface ClassNodeProps {
     };
 }
 
-export function ClassNode({ data }: ClassNodeProps) {
+export function ClassNode({ data, selected }: ClassNodeProps) {
     const isInterface = data.type === 'interface';
     const isAbstract = data.is_abstract;
     const headerFontSize = data.fontSize || 16;
@@ -23,6 +23,13 @@ export function ClassNode({ data }: ClassNodeProps) {
 
     return (
         <div className="aetheris-node">
+            <NodeResizer
+                minWidth={150}
+                minHeight={100}
+                isVisible={selected}
+                lineClassName="resize-line"
+                handleClassName="resize-handle"
+            />
             {/* Top Row of Handles */}
             <Handle type="target" position={Position.Top} id="t1" style={{ left: '25%' }} className="handle-point" />
             <Handle type="target" position={Position.Top} id="t2" style={{ left: '50%' }} className="handle-point" />

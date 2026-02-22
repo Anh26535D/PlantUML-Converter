@@ -13,11 +13,11 @@ export function PackageNode({ data, selected }: NodeProps) {
                 lineClassName="resize-line"
                 handleClassName="resize-handle"
             />
-            <div className="package-header custom-drag-handle" style={{ fontSize: `${fontSize}px` }}>
+            <div className="package-header" style={{ fontSize: `${fontSize}px` }}>
                 <span className="package-icon">📦</span>
                 <span className="package-label">{String(data.label || 'Package')}</span>
             </div>
-            <div className="package-body" />
+            <div className="package-body" style={{ pointerEvents: 'none' }} />
         </div>
     );
 }

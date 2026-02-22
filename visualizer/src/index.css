@@ -308,15 +308,20 @@ html {
 
 /* Custom Node Styles */
 .aetheris-node {
+  position: relative;
   background: var(--node-bg);
   border: 2.5px solid var(--border-color);
   border-radius: 3px 15px 5px 25px / 15px 5px 25px 3px;
-  min-width: 200px;
-  width: auto;
+  width: 100%;
+  height: 100%;
+  min-width: 150px;
+  min-height: 100px;
   box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s, box-shadow 0.2s;
-  overflow: visible;
-  transform: rotate(-0.5deg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transform: none;
 }
 
 .aetheris-node:hover {
@@ -503,6 +508,10 @@ html {
 }
 
 /* Package Node Styles */
+.react-flow__node-package {
+  pointer-events: none !important;
+}
+
 .aetheris-package-node {
   width: 100%;
   height: 100%;
@@ -513,11 +522,12 @@ html {
   box-shadow: 12px 12px 0px rgba(0, 0, 0, 0.03);
   transition: background-color 0.2s;
   pointer-events: none;
-  /* Let clicks pass through to classes unless clicking the header/resizer */
 }
 
-.aetheris-package-node>* {
-  pointer-events: auto;
+.package-header,
+.resize-handle,
+.resize-line {
+  pointer-events: auto !important;
 }
 
 .package-header {
@@ -611,4 +621,24 @@ html {
 
 .package-icon {
   font-size: 1.1rem;
+}
+
+/* Resize Handles */
+.resize-line {
+  border-color: #3b82f6 !important;
+  border-width: 1.5px !important;
+}
+
+.resize-handle {
+  width: 10px !important;
+  height: 10px !important;
+  background: white !important;
+  border: 2px solid #3b82f6 !important;
+  border-radius: 4px !important;
+  transition: all 0.2s;
+}
+
+.resize-handle:hover {
+  background: #3b82f6 !important;
+  transform: scale(1.2);
 }

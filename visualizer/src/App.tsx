@@ -58,6 +58,8 @@ const COLORS = [
   'rgba(255, 255, 255, 0.9)', // White
 ];
 
+const FONT_SIZES = [10, 12, 14, 16, 18, 20, 24, 32, 40];
+
 function FlowCanvas() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -68,6 +70,7 @@ function FlowCanvas() {
   const [showCode, setShowCode] = useState(true);
   const [syncStatus, setSyncStatus] = useState<'synced' | 'error' | 'syncing'>('synced');
   const [contextMenu, setContextMenu] = useState<any>(null);
+  const [fontSizeTarget, setFontSizeTarget] = useState<'header' | 'fields' | 'methods'>('header');
 
   const { screenToFlowPosition, setViewport, fitView } = useReactFlow();
 
@@ -107,7 +110,7 @@ function FlowCanvas() {
                 color: pkgLayout.color || COLORS[Object.keys(packageNodes).length % COLORS.length]
               },
               zIndex: -1,
-              dragHandle: '.custom-drag-handle',
+              dragHandle: '.package-header',
             };
             initialNodes.push(packageNodes[cls.package]);
           }
@@ -122,6 +125,7 @@ function FlowCanvas() {
             position: layout.position || { x: 100, y: 100 },
             parentId: cls.package ? `pkg-${cls.package}` : undefined,
             extent: cls.package ? 'parent' : undefined,
+            dragHandle: '.node-header',
             data: {
               ...cls,
               label: cls.name,
@@ -491,6 +495,8 @@ function FlowCanvas() {
             selectionMode={isSelectMode ? SelectionMode.Partial : (undefined as any)}
             panOnDrag={!isSelectMode}
             selectionOnDrag={isSelectMode}
+            nodesDraggable={true}
+            nodesConnectable={true}
             minZoom={0.05}
             maxZoom={4}
             fitView
@@ -516,22 +522,58 @@ function FlowCanvas() {
               )}
               {contextMenu.type === 'node' && (
                 <>
-                  <div className="menu-section">
-                    <span>Background Color</span>
-                    <div className="color-grid">
-                      {COLORS.map(c => (
-                        <button
-                          key={c}
-                          className="color-swatch"
-                          style={{ background: c }}
-                          onClick={() => {
-                            setNodes(nds => nds.map(n => n.id === contextMenu.nodeId ? { ...n, data: { ...n.data, color: c } } : n));
-                            setContextMenu(null);
-                          }}
-                        />
-                      ))}
-                    </div>
+                  <div className="context-menu-label">Colors</div>
+                  <div className="color-grid">
+                    {COLORS.map(c => (
+                      <button
+                        key={c}
+                        className="color-swatch"
+                        style={{ background: c }}
+                        onClick={() => {
+                          setNodes(nds => nds.map(n => n.id === contextMenu.nodeId ? { ...n, data: { ...n.data, color: c } } : n));
+                          setContextMenu(null);
+                        }}
+                      />
+                    ))}
                   </div>
+
+                  <div className="context-menu-label">Font Target</div>
+                  <div className="target-selector">
+                    <button
+                      className={`font-size-button ${fontSizeTarget === 'header' ? 'active' : ''}`}
+                      onClick={() => setFontSizeTarget('header')}
+                    >Header</button>
+                    <button
+                      className={`font-size-button ${fontSizeTarget === 'fields' ? 'active' : ''}`}
+                      onClick={() => setFontSizeTarget('fields')}
+                    >Fields</button>
+                    <button
+                      className={`font-size-button ${fontSizeTarget === 'methods' ? 'active' : ''}`}
+                      onClick={() => setFontSizeTarget('methods')}
+                    >Methods</button>
+                  </div>
+
+                  <div className="context-menu-label">Size</div>
+                  <div className="font-size-picker">
+                    {FONT_SIZES.map(sz => (
+                      <button
+                        key={sz}
+                        className="font-size-button"
+                        onClick={() => {
+                          setNodes(nds => nds.map(n => {
+                            if (n.id === contextMenu.nodeId) {
+                              const dataKey = fontSizeTarget === 'header' ? 'fontSize' :
+                                fontSizeTarget === 'fields' ? 'fieldFontSize' : 'methodFontSize';
+                              return { ...n, data: { ...n.data, [dataKey]: sz } };
+                            }
+                            return n;
+                          }));
+                          setContextMenu(null);
+                        }}
+                      >{sz}</button>
+                    ))}
+                  </div>
+
                   <button className="menu-item destructive" onClick={() => {
                     setNodes(nds => nds.filter(n => n.id !== contextMenu.nodeId));
                     setContextMenu(null);
