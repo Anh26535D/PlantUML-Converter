@@ -35,8 +35,11 @@ aetheris/
 │   ├── aml_generator.py  # Aetheris Modeling Language engine
 │   └── puml_generator.py # Legacy PlantUML support
 ├── visualizer/           # Interactive Canvas (React/Vite)
+│   ├── src/components/   # Custom React Flow nodes (Class, Package, EditableEdge)
+│   └── src/assets/       # Persistent layout.json and model.json
 ├── examples/             # Sample code for testing
-├── main.py               # CLI entry point
+├── main.py               # CLI entry point for model extraction
+├── service.py            # FastAPI persistence service
 └── DEVELOPMENT.md        # Technical guidelines
 ```
 
@@ -48,19 +51,26 @@ The source of truth for code structure. Contains the `ClassModel` and relationsh
 ### `converter/aml_generator.py`
 The core engine of Aetheris. It translates `ClassModel` objects into the `.aml` plain-text DSL.
 
-### `visualizer/` (Upcoming)
-The React-based frontend that consumes `.aml` and `.layout.json` files to provide a drag-and-drop architectural experience.
+### `visualizer/`
+A high-performance React application built on **React Flow**. It provides:
+- **PackageNode**: Nested, resizable containers for grouped classes.
+- **EditableEdge**: Custom SVG routing with draggable waypoints.
+- **Persistence**: Real-time sync with `service.py` to save spatial arrangements.
 
-### `converter/puml_generator.py`
-Maintained for backward compatibility with PlantUML environments.
+### `service.py`
+A lightweight FastAPI server that acts as the bridge between the browser and the filesystem. It handles auto-saving of `layout.json` to ensure your design work is never lost.
 
 ---
 
 ## 🛠️ Workflow
 
 ### Dependency Management
-Use `uv` for all dependency management.
+- **Python**: Use `uv` (Fastest).
+- **Frontend**: Use `npm`.
 
 ## 🧪 Testing
 - Always verify changes against the `examples/` directory.
-- For new features, ensure both the AML output and the Visualizer state remain consistent.
+- For new features, ensure:
+    1. `main.py` correctly extracts the structure.
+    2. `service.py` accurately persists new metadata (like colors or waypoints).
+    3. The `visualizer` remains responsive with large diagrams.

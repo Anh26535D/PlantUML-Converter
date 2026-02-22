@@ -58,10 +58,15 @@ class JavaParser(BaseParser):
             is_collect = raw_type in ("List", "Set", "Collection", "Map", "ArrayList", "HashSet")
             field_type = self._extract_type_name(field_node.type)
             
-            # Detect association vs aggregation
+            # Detect association vs aggregation vs composition
             if not self._is_primitive(field_type):
+                is_private = "private" in modifiers
+                is_final = "final" in modifiers
+                
                 if is_collect:
                     class_model.aggregations.append(field_type)
+                elif is_private and is_final:
+                    class_model.compositions.append(field_type)
                 else:
                     class_model.associations.append(field_type)
             

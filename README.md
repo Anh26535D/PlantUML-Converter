@@ -5,6 +5,8 @@ Aetheris is a next-generation architectural visualization tool that transforms J
 ## 🚀 Key Innovations
 
 -   **Interactive Canvas**: Drag-and-drop components to create the perfect layout. Your visual arrangements are preserved even as your code evolves.
+-   **Package Grouping**: Automatically organize classes into interactive, resizable containers based on their source code namespace.
+-   **Manual Edge Routing**: Take control of your relationships. Add draggable waypoints to route lines around obstacles or create custom architectural paths.
 -   **Aetheris Modeling Language (AML)**: An independent, human-readable DSL that defines your architecture without the constraints of legacy diagramming engines.
 -   **Intelligent Extraction**:
     *   **Java**: Deep AST parsing using `javalang`.
@@ -21,6 +23,10 @@ This project uses `uv` for lightning-fast dependency management.
     ```bash
     uv sync
     ```
+3.  **Install Frontend dependencies:**
+    ```bash
+    cd visualizer && npm install
+    ```
 
 ## 📖 Usage
 
@@ -31,7 +37,7 @@ uv run main.py <source_path> -o visualizer/src/assets/model.json -f json
 ```
 
 ### 2. Start the Persistence Service
-Launch the local API server to enable "Save Layout" functionality.
+Launch the local API server to enable "Save Layout" and color customization.
 ```bash
 uv run python service.py
 ```
@@ -45,16 +51,18 @@ npm run dev
 *Navigate to [http://localhost:5173](http://localhost:5173) in your browser.*
 
 ### Features in Action:
-- **Design Mode**: Drag class nodes to your desired spatial arrangement.
-- **Persistence**: Click **"Save Layout"** to permanently store positions in `layout.json`.
-- **Code Updates**: Rescan your code anytime; your visual layout stays preserved.
+- **Design Mode**: Drag class nodes and package containers to your desired arrangement.
+- **Routing**: Right-click relationship lines to add/remove waypoints. Drag points to route paths.
+- **Styling**: Right-click package headers to customize background colors.
+- **Persistence**: Click **"Save Layout"** to permanently store positions, colors, and waypoints in `layout.json`.
 
 ## 📂 Project Structure
 
--   `main.py`: CLI entry point.
--   `converter/`: Core logic containing individual parsers and the PUML generator.
+-   `main.py`: CLI entry point for model extraction.
+-   `service.py`: Backend persistence API for the visualizer.
+-   `converter/`: Core logic containing individual parsers and the AML engine.
+-   `visualizer/`: React/Vite interactive architectural canvas.
 -   `examples/`: Sample source files to test the converter.
--   `TASK_SUMMARY.md`: Detailed implementation status and technical roadmap.
 
 ## 📄 License
 MIT

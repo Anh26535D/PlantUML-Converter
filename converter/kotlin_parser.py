@@ -98,6 +98,8 @@ class KotlinParser(BaseParser):
                                 is_collect = any(c in raw_text for c in ("List", "Set", "Map", "Collection", "Array"))
                                 if is_collect:
                                     model.aggregations.append(field.type)
+                                elif "private" in raw_text and "val" in raw_text:
+                                    model.compositions.append(field.type)
                                 else:
                                     model.associations.append(field.type)
 
@@ -114,6 +116,8 @@ class KotlinParser(BaseParser):
                             is_collect = any(c in raw_text for c in ("List", "Set", "Map", "Collection", "Array"))
                             if is_collect:
                                 model.aggregations.append(field.type)
+                            elif "private" in raw_text and "val" in raw_text:
+                                model.compositions.append(field.type)
                             else:
                                 model.associations.append(field.type)
                 elif child.type == "function_declaration":
