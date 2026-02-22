@@ -1,5 +1,50 @@
 [
   {
+    "name": "FleetManager",
+    "type": "class",
+    "visibility": "+",
+    "fields": [
+      {
+        "name": "planetaryStations",
+        "type": "SpaceStation",
+        "visibility": "-",
+        "static": false
+      },
+      {
+        "name": "activeUnits",
+        "type": "Starship",
+        "visibility": "-",
+        "static": false
+      }
+    ],
+    "methods": [
+      {
+        "name": "dispatch",
+        "return_type": "void",
+        "parameters": [
+          "Starship",
+          "SpaceStation"
+        ],
+        "visibility": "+",
+        "static": false
+      }
+    ],
+    "extends": null,
+    "implements": [],
+    "is_abstract": false,
+    "package": "com.universe.services",
+    "associations": [],
+    "dependencies": [
+      "Starship",
+      "SpaceStation"
+    ],
+    "aggregations": [
+      "SpaceStation",
+      "Starship"
+    ],
+    "compositions": []
+  },
+  {
     "name": "SpaceStation",
     "type": "class",
     "visibility": "+",
@@ -19,6 +64,12 @@
       {
         "name": "dockingBays",
         "type": "DockingBay",
+        "visibility": "-",
+        "static": false
+      },
+      {
+        "name": "dockedStarships",
+        "type": "Starship",
         "visibility": "-",
         "static": false
       },
@@ -63,7 +114,8 @@
       "Toolkit"
     ],
     "aggregations": [
-      "DockingBay"
+      "DockingBay",
+      "Starship"
     ],
     "compositions": [
       "LifeSupportSystem",
@@ -244,8 +296,14 @@
         "static": false
       },
       {
+        "name": "homeBase",
+        "type": "SpaceStation",
+        "visibility": "+",
+        "static": false
+      },
+      {
         "name": "captain",
-        "type": "Any",
+        "type": "Captain",
         "visibility": "+",
         "static": false
       },
@@ -271,7 +329,10 @@
     "implements": [],
     "is_abstract": false,
     "package": "com.universe.fleet",
-    "associations": [],
+    "associations": [
+      "SpaceStation",
+      "Captain"
+    ],
     "dependencies": [
       "CombatTarget"
     ],

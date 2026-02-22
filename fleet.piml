@@ -1,0 +1,100 @@
+@startpiml fleet
+
+skinparam shadowing false
+skinparam class {
+    BackgroundColor white
+    ArrowColor #263238
+    BorderColor #263238
+}
+skinparam packageStyle rectangle
+left to right direction
+skinparam nodesep 80
+skinparam ranksep 100
+skinparam linetype polyline
+
+  package "com.universe.services" {
+    class FleetManager {
+      -planetaryStations : SpaceStation
+      -activeUnits : Starship
+      +dispatch(Starship, SpaceStation) : void
+    }
+  }
+
+  package "com.universe.arch" {
+    class DockingBay {
+    }
+    interface IMaintainable {
+      ~performMaintenance(Toolkit) : void
+    }
+    class LifeSupportSystem {
+      +checkStatus() : void
+    }
+    class MissionControl {
+      +authorize() : void
+    }
+    abstract class OrbitalStructure {
+    }
+    class Pilot {
+    }
+    class SpaceStation {
+      -lifeSupport : LifeSupportSystem
+      -hull : StructuralIntegrity
+      -dockingBays : DockingBay
+      -dockedStarships : Starship
+      -activeDutyPilot : Pilot
+      +executeMission(MissionControl) : void
+      +performMaintenance(Toolkit) : void
+    }
+    class StructuralIntegrity {
+    }
+    class Toolkit {
+      +calibrate() : void
+    }
+  }
+
+  package "com.universe.fleet" {
+    class Captain {
+    }
+    class CombatTarget {
+      +takeDamage(Int) : Unit
+    }
+    class RepairDrone {
+    }
+    class ShieldGenerator {
+    }
+    class SpaceVehicle {
+    }
+    class Starship {
+      -core : WarpCore
+      +drones : RepairDrone
+      +homeBase : SpaceStation
+      +captain : Captain
+      -shieldGen : Any
+      +engage(CombatTarget) : Unit
+    }
+    class WarpCore {
+      +outputPower() : Unit
+    }
+  }
+
+
+' Relationships
+FleetManager o-- SpaceStation
+FleetManager o-- Starship
+IMaintainable ..> Toolkit
+IMaintainable <|.. SpaceStation
+OrbitalStructure <|-- SpaceStation
+SpaceStation *-- LifeSupportSystem
+SpaceStation *-- StructuralIntegrity
+SpaceStation --> Pilot
+SpaceStation ..> MissionControl
+SpaceStation ..> Toolkit
+SpaceStation o-- DockingBay
+SpaceStation o-- Starship
+SpaceVehicle <|-- Starship
+Starship *-- WarpCore
+Starship --> Captain
+Starship --> SpaceStation
+Starship ..> CombatTarget
+Starship o-- RepairDrone
+@endpiml
