@@ -1,0 +1,415 @@
+[
+  {
+    "name": "Controller",
+    "type": "class",
+    "visibility": "+",
+    "fields": [
+      {
+        "name": "service",
+        "type": "Service",
+        "visibility": "-",
+        "static": false
+      },
+      {
+        "name": "entities",
+        "type": "Entity",
+        "visibility": "-",
+        "static": false
+      }
+    ],
+    "methods": [
+      {
+        "name": "process",
+        "return_type": "void",
+        "parameters": [
+          "Request"
+        ],
+        "visibility": "+",
+        "static": false
+      }
+    ],
+    "extends": null,
+    "implements": [],
+    "is_abstract": false,
+    "package": "com.example.arch",
+    "associations": [
+      "Service"
+    ],
+    "dependencies": [
+      "Request"
+    ],
+    "aggregations": [
+      "Entity"
+    ],
+    "compositions": []
+  },
+  {
+    "name": "Service",
+    "type": "class",
+    "visibility": "~",
+    "fields": [
+      {
+        "name": "repository",
+        "type": "Repository",
+        "visibility": "-",
+        "static": false
+      }
+    ],
+    "methods": [
+      {
+        "name": "doSomething",
+        "return_type": "Response",
+        "parameters": [
+          "Request"
+        ],
+        "visibility": "+",
+        "static": false
+      }
+    ],
+    "extends": null,
+    "implements": [],
+    "is_abstract": false,
+    "package": "com.example.arch",
+    "associations": [
+      "Repository"
+    ],
+    "dependencies": [
+      "Response",
+      "Request"
+    ],
+    "aggregations": [],
+    "compositions": []
+  },
+  {
+    "name": "DatabaseRepository",
+    "type": "class",
+    "visibility": "~",
+    "fields": [
+      {
+        "name": "db",
+        "type": "Database",
+        "visibility": "-",
+        "static": false
+      }
+    ],
+    "methods": [],
+    "extends": null,
+    "implements": [
+      "Repository"
+    ],
+    "is_abstract": false,
+    "package": "com.example.arch",
+    "associations": [
+      "Database"
+    ],
+    "dependencies": [],
+    "aggregations": [],
+    "compositions": []
+  },
+  {
+    "name": "Database",
+    "type": "class",
+    "visibility": "~",
+    "fields": [],
+    "methods": [],
+    "extends": null,
+    "implements": [],
+    "is_abstract": false,
+    "package": "com.example.arch",
+    "associations": [],
+    "dependencies": [],
+    "aggregations": [],
+    "compositions": []
+  },
+  {
+    "name": "Request",
+    "type": "class",
+    "visibility": "~",
+    "fields": [],
+    "methods": [
+      {
+        "name": "getId",
+        "return_type": "String",
+        "parameters": [],
+        "visibility": "+",
+        "static": false
+      }
+    ],
+    "extends": null,
+    "implements": [],
+    "is_abstract": false,
+    "package": "com.example.arch",
+    "associations": [],
+    "dependencies": [],
+    "aggregations": [],
+    "compositions": []
+  },
+  {
+    "name": "Response",
+    "type": "class",
+    "visibility": "~",
+    "fields": [],
+    "methods": [],
+    "extends": null,
+    "implements": [],
+    "is_abstract": false,
+    "package": "com.example.arch",
+    "associations": [],
+    "dependencies": [],
+    "aggregations": [],
+    "compositions": []
+  },
+  {
+    "name": "Entity",
+    "type": "class",
+    "visibility": "~",
+    "fields": [],
+    "methods": [],
+    "extends": null,
+    "implements": [],
+    "is_abstract": false,
+    "package": "com.example.arch",
+    "associations": [],
+    "dependencies": [],
+    "aggregations": [],
+    "compositions": []
+  },
+  {
+    "name": "Repository",
+    "type": "interface",
+    "visibility": "~",
+    "fields": [],
+    "methods": [
+      {
+        "name": "find",
+        "return_type": "Response",
+        "parameters": [
+          "String"
+        ],
+        "visibility": "~",
+        "static": false
+      }
+    ],
+    "extends": null,
+    "implements": [],
+    "is_abstract": false,
+    "package": "com.example.arch",
+    "associations": [],
+    "dependencies": [
+      "Response"
+    ],
+    "aggregations": [],
+    "compositions": []
+  },
+  {
+    "name": "User",
+    "type": "class",
+    "visibility": "+",
+    "fields": [
+      {
+        "name": "name",
+        "type": "String",
+        "visibility": "-",
+        "static": false
+      },
+      {
+        "name": "age",
+        "type": "int",
+        "visibility": "-",
+        "static": false
+      }
+    ],
+    "methods": [
+      {
+        "name": "getName",
+        "return_type": "String",
+        "parameters": [],
+        "visibility": "+",
+        "static": false
+      },
+      {
+        "name": "setName",
+        "return_type": "void",
+        "parameters": [
+          "String"
+        ],
+        "visibility": "+",
+        "static": false
+      }
+    ],
+    "extends": null,
+    "implements": [],
+    "is_abstract": false,
+    "package": "com.example",
+    "associations": [],
+    "dependencies": [],
+    "aggregations": [],
+    "compositions": []
+  },
+  {
+    "name": "Employee",
+    "type": "class",
+    "visibility": "+",
+    "fields": [
+      {
+        "name": "employeeId",
+        "type": "String",
+        "visibility": "-",
+        "static": false
+      }
+    ],
+    "methods": [
+      {
+        "name": "getId",
+        "return_type": "String",
+        "parameters": [],
+        "visibility": "+",
+        "static": false
+      }
+    ],
+    "extends": "User",
+    "implements": [
+      "Identifiable"
+    ],
+    "is_abstract": false,
+    "package": "com.example",
+    "associations": [],
+    "dependencies": [],
+    "aggregations": [],
+    "compositions": []
+  },
+  {
+    "name": "Identifiable",
+    "type": "interface",
+    "visibility": "~",
+    "fields": [],
+    "methods": [
+      {
+        "name": "getId",
+        "return_type": "String",
+        "parameters": [],
+        "visibility": "~",
+        "static": false
+      }
+    ],
+    "extends": null,
+    "implements": [],
+    "is_abstract": false,
+    "package": "com.example",
+    "associations": [],
+    "dependencies": [],
+    "aggregations": [],
+    "compositions": []
+  },
+  {
+    "name": "Product",
+    "type": "class",
+    "visibility": "+",
+    "fields": [
+      {
+        "name": "id",
+        "type": "String",
+        "visibility": "+",
+        "static": false
+      },
+      {
+        "name": "name",
+        "type": "String",
+        "visibility": "+",
+        "static": false
+      }
+    ],
+    "methods": [
+      {
+        "name": "display",
+        "return_type": "Unit",
+        "parameters": [],
+        "visibility": "+",
+        "static": false
+      }
+    ],
+    "extends": null,
+    "implements": [],
+    "is_abstract": false,
+    "package": "com.example",
+    "associations": [],
+    "dependencies": [],
+    "aggregations": [],
+    "compositions": []
+  },
+  {
+    "name": "Shape",
+    "type": "class",
+    "visibility": "+",
+    "fields": [],
+    "methods": [
+      {
+        "name": "area",
+        "return_type": "Double",
+        "parameters": [],
+        "visibility": "+",
+        "static": false
+      }
+    ],
+    "extends": null,
+    "implements": [],
+    "is_abstract": true,
+    "package": "com.example",
+    "associations": [],
+    "dependencies": [],
+    "aggregations": [],
+    "compositions": []
+  },
+  {
+    "name": "Circle",
+    "type": "class",
+    "visibility": "+",
+    "fields": [
+      {
+        "name": "radius",
+        "type": "Double",
+        "visibility": "+",
+        "static": false
+      }
+    ],
+    "methods": [
+      {
+        "name": "area",
+        "return_type": "Double",
+        "parameters": [],
+        "visibility": "+",
+        "static": false
+      }
+    ],
+    "extends": "Shape",
+    "implements": [],
+    "is_abstract": false,
+    "package": "com.example",
+    "associations": [],
+    "dependencies": [],
+    "aggregations": [],
+    "compositions": []
+  },
+  {
+    "name": "AppConfig",
+    "type": "object",
+    "visibility": "+",
+    "fields": [
+      {
+        "name": "version",
+        "type": "Any",
+        "visibility": "+",
+        "static": false
+      }
+    ],
+    "methods": [],
+    "extends": null,
+    "implements": [],
+    "is_abstract": false,
+    "package": "com.example",
+    "associations": [],
+    "dependencies": [],
+    "aggregations": [],
+    "compositions": []
+  }
+]

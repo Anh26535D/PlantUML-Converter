@@ -1,0 +1,188 @@
+:root {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  --bg-color: #f8fafc;
+  --node-bg: #ffffff;
+  --border-color: #1e293b;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --accent-blue: #3b82f6;
+  --header-bg: rgba(255, 255, 255, 0.85);
+}
+
+body,
+html {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+.app-container {
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--bg-color);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.canvas-wrapper {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+}
+
+.main-header {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 100;
+  background: var(--header-bg);
+  backdrop-filter: blur(10px);
+  padding: 16px 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  pointer-events: auto;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.subtitle {
+  margin: 4px 0 0 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.footer-info {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  z-index: 100;
+  background: var(--header-bg);
+  backdrop-filter: blur(10px);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Custom Node Styles */
+.aetheris-node {
+  background: var(--node-bg);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  min-width: 220px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  overflow: hidden;
+}
+
+.aetheris-node:hover {
+  box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.15);
+}
+
+.node-header {
+  padding: 12px;
+  text-align: center;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.node-header.class {
+  background-color: #f1f5f9;
+}
+
+.node-header.interface {
+  background-color: #eff6ff;
+}
+
+.node-header.abstract {
+  background-color: #f8fafc;
+}
+
+.type-tag {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.type-tag.blue {
+  color: var(--accent-blue);
+}
+
+.type-tag.grey {
+  color: #94a3b8;
+}
+
+.class-name {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.node-section {
+  padding: 8px 12px;
+  font-size: 0.75rem;
+}
+
+.node-section.fields {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.member-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.visibility {
+  width: 12px;
+  color: var(--text-secondary);
+  font-family: monospace;
+}
+
+.member-name {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.member-type {
+  color: var(--text-secondary);
+}
+
+/* React Flow Overrides */
+.handle-point {
+  width: 10px !important;
+  height: 10px !important;
+  background: var(--border-color) !important;
+  border: 2px solid #ffffff !important;
+}
+
+.react-flow__controls {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+.react-flow__minimap {
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+}
