@@ -1,5 +1,6 @@
 package com.universe.arch;
 
+import com.universe.fleet.Starship; // INTER-PACKAGE RELATIONSHIP
 import java.util.List;
 
 /**
@@ -12,6 +13,9 @@ public class SpaceStation extends OrbitalStructure implements IMaintainable {
 
     // AGGREGATION: Docking bays exist independently but are grouped here
     private List<DockingBay> dockingBays;
+
+    // ASSOCIATION: Fleet starships can dock here
+    private List<Starship> dockedStarships; // Cross-package association
 
     // ASSOCIATION: Pilots come and go
     private Pilot activeDutyPilot;

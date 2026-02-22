@@ -1,5 +1,7 @@
 package com.universe.fleet
 
+import com.universe.arch.SpaceStation // INTER-PACKAGE RELATIONSHIP
+
 /**
  * Advanced Starship architecture in Kotlin
  */
@@ -9,6 +11,9 @@ class Starship(
     // AGGREGATION via primary constructor
     val drones: List<RepairDrone>
 ) : SpaceVehicle() {
+
+    // ASSOCIATION: Home base space station
+    var homeBase: SpaceStation? = null // Cross-package association
 
     // ASSOCIATION: Captain can be reassigned
     var captain: Captain? = null

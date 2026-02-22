@@ -2,13 +2,13 @@ import click
 import os
 from pathlib import Path
 from converter.factory import ParserFactory
-from converter.puml_generator import PUMLGenerator
+from converter.piml_generator import PIMLGenerator
 from converter.aml_generator import AMLGenerator
 
 @click.command()
 @click.argument('path', type=click.Path(exists=True))
 @click.option('--output', '-o', default='diagram.aml', help='Output file')
-@click.option('--format', '-f', type=click.Choice(['aml', 'puml', 'json']), default='aml', help='Output format (default: aml)')
+@click.option('--format', '-f', type=click.Choice(['aml', 'piml', 'json']), default='aml', help='Output format (default: aml)')
 def main(path, output, format):
     """
     Aetheris: Convert Java/Kotlin source code to architectural diagrams.
@@ -57,7 +57,7 @@ def main(path, output, format):
         from dataclasses import asdict
         content = json.dumps([asdict(c) for c in all_classes], indent=2)
     else:
-        generator = PUMLGenerator()
+        generator = PIMLGenerator()
         content = generator.generate(all_classes, title=diagram_name)
     
     with open(output, 'w', encoding='utf-8') as f:

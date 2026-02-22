@@ -164,7 +164,7 @@ class KotlinParser(BaseParser):
         if not var_decl: return None
         
         name = self._get_text(self._find_child(var_decl, "identifier"))
-        type_node = self._find_child(var_decl, "user_type") or self._find_child(var_decl, "type")
+        type_node = self._find_child(var_decl, "user_type") or self._find_child(var_decl, "type") or self._find_child(var_decl, "nullable_type")
         prop_type = self._extract_type(type_node) if type_node else "Any"
         
         return FieldModel(name=name, type=prop_type, visibility=self._convert_visibility(modifiers))
@@ -175,14 +175,14 @@ class KotlinParser(BaseParser):
         ret_type = "Unit"
         params = []
         
-        type_node = self._find_child(node, "user_type") or self._find_child(node, "type")
+        type_node = self._find_child(node, "user_type") or self._find_child(node, "type") or self._find_child(node, "nullable_type")
         if type_node: ret_type = self._extract_type(type_node)
         
         val_params = self._find_child(node, "function_value_parameters")
         if val_params:
             for p in val_params.children:
                 if p.type == "parameter":
-                    p_type_node = self._find_child(p, "type") or self._find_child(p, "user_type")
+                    p_type_node = self._find_child(p, "type") or self._find_child(p, "user_type") or self._find_child(p, "nullable_type")
                     if p_type_node: params.append(self._extract_type(p_type_node))
                     else: params.append("Any")
         
@@ -190,25 +190,28 @@ class KotlinParser(BaseParser):
 
     def _extract_type(self, node) -> str:
         if not node: return "Any"
+        
+        # Handle nullable types by descending into them
+        if node.type == "nullable_type":
+            child = self._find_child(node, "user_type") or self._find_child(node, "type")
+            if child: return self._extract_type(child)
+
         # Handle generics like List<String>
-        # In tree-sitter-kotlin, user_type might have type_arguments
         type_args = self._find_child(node, "type_arguments")
-        base_name = self._get_text(node)
+        text = self._get_text(node)
         
         if type_args:
-             # Extract first arg for relationship detection
-             # user_type -> type_arguments -> type -> user_type -> identifier
-             # This is a bit complex to traverse perfectly, but let's try a heuristic
-             text = self._get_text(node)
              if "<" in text and ">" in text:
-                 # Poor man's generic extraction
                  inner = text[text.find("<")+1 : text.rfind(">")]
                  # If base is a collection, return inner
                  for coll in ("List", "Set", "Map", "Collection", "ArrayList", "HashSet"):
                      if text.startswith(coll):
-                         return inner.split(",")[0].strip()
-                 return text
-        return base_name
+                         # Handle map by taking first arg
+                         res = inner.split(",")[0].strip()
+                         return res.replace("?", "").strip()
+                 return text.replace("?", "").strip()
+                 
+        return text.replace("?", "").strip()
 
     def _is_primitive(self, type_name: str) -> bool:
         primitives = {"Int", "Long", "Short", "Byte", "Float", "Double", "Boolean", "Char", "String", "Any", "Unit"}
