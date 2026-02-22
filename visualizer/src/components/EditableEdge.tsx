@@ -20,7 +20,17 @@ export function EditableEdge({
 
     return (
         <>
-            <BaseEdge id={id} path={path} markerEnd={markerEnd} style={style} />
+            <BaseEdge
+                id={id}
+                path={path}
+                markerEnd={markerEnd}
+                style={{
+                    ...style,
+                    strokeWidth: 3,
+                    strokeLinecap: 'round',
+                    strokeLinejoin: 'round',
+                }}
+            />
             <EdgeLabelRenderer>
                 {vertices.map((v, index) => (
                     <div

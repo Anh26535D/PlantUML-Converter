@@ -1,12 +1,14 @@
+@import url('https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap');
+
 :root {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  --bg-color: #f8fafc;
+  font-family: 'Architects Daughter', cursive;
+  --bg-color: #fdfdfd;
   --node-bg: #ffffff;
   --border-color: #1e293b;
-  --text-primary: #0f172a;
-  --text-secondary: #64748b;
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
   --accent-blue: #3b82f6;
-  --header-bg: rgba(255, 255, 255, 0.85);
+  --header-bg: rgba(255, 255, 255, 0.9);
 }
 
 body,
@@ -36,6 +38,10 @@ html {
   flex: 1;
   width: 100%;
   height: 100%;
+}
+
+.canvas-wrapper.selection-mode .react-flow__pane {
+  cursor: crosshair !important;
 }
 
 .main-header {
@@ -78,6 +84,15 @@ html {
   background: #2563eb;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.save-button.secondary {
+  background: #64748b;
+}
+
+.save-button.secondary:hover {
+  background: #475569;
+  box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
 }
 
 .save-button:disabled {
@@ -132,22 +147,27 @@ html {
 /* Custom Node Styles */
 .aetheris-node {
   background: var(--node-bg);
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
-  min-width: 220px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-  transition: box-shadow 0.2s;
-  overflow: hidden;
+  border: 2.5px solid var(--border-color);
+  border-radius: 3px 15px 5px 25px / 15px 5px 25px 3px;
+  min-width: 200px;
+  width: auto;
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  overflow: visible;
+  transform: rotate(-0.5deg);
 }
 
 .aetheris-node:hover {
-  box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.15);
+  transform: rotate(0deg) scale(1.02);
+  box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.15);
 }
 
 .node-header {
   padding: 12px;
   text-align: center;
   border-bottom: 2px solid var(--border-color);
+  font-weight: 800;
+  letter-spacing: 1px;
 }
 
 .node-header.class {
@@ -163,7 +183,7 @@ html {
 }
 
 .type-tag {
-  font-size: 0.625rem;
+  font-size: 0.6em;
   text-transform: uppercase;
   font-weight: 800;
   margin-bottom: 4px;
@@ -179,13 +199,13 @@ html {
 
 .class-name {
   font-weight: 700;
-  font-size: 1rem;
+  font-size: inherit;
   color: var(--text-primary);
 }
 
 .node-section {
   padding: 8px 12px;
-  font-size: 0.75rem;
+  font-size: inherit;
 }
 
 .node-section.fields {
@@ -199,26 +219,52 @@ html {
 }
 
 .visibility {
-  width: 12px;
+  width: 1.2em;
   color: var(--text-secondary);
   font-family: monospace;
+  font-size: inherit;
 }
 
 .member-name {
   color: var(--text-primary);
   font-weight: 500;
+  font-size: inherit;
 }
 
 .member-type {
   color: var(--text-secondary);
+  font-size: inherit;
 }
 
 /* React Flow Overrides */
 .handle-point {
-  width: 10px !important;
-  height: 10px !important;
-  background: var(--border-color) !important;
+  width: 14px !important;
+  height: 14px !important;
+  background: #334155 !important;
   border: 2px solid #ffffff !important;
+  box-shadow: 0 0 0 1px #334155;
+  border-radius: 50% !important;
+  z-index: 1001 !important;
+  cursor: crosshair !important;
+  opacity: 0;
+  transition: all 0.2s;
+}
+
+.handle-point:hover,
+.handle-point.react-flow__handle-connecting {
+  transform: scale(1.4);
+  background: #3b82f6 !important;
+  opacity: 1;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.waypoint-handle {
+  transition: transform 0.2s, background 0.2s;
+}
+
+.waypoint-handle:hover {
+  transform: translate(-50%, -50%) scale(1.4) !important;
+  background: #2563eb !important;
 }
 
 .react-flow__controls {
@@ -242,7 +288,7 @@ html {
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   z-index: 2000;
   padding: 4px;
-  min-width: 140px;
+  min-width: 160px;
 }
 
 .context-menu-item {
@@ -271,43 +317,48 @@ html {
 
 /* Package Node Styles */
 .aetheris-package-node {
-  background: white;
-  border-top: 5px solid #1e293b;
-  border-right: 2px solid #334155;
-  border-bottom: 2px solid #334155;
-  border-left: 2px solid #334155;
-  border-radius: 4px;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.6);
+  border: 3.5px solid #334155;
+  border-radius: 8px;
   position: relative;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  box-shadow: 12px 12px 0px rgba(0, 0, 0, 0.03);
   transition: background-color 0.2s;
+  pointer-events: none;
+  /* Let clicks pass through to classes unless clicking the header/resizer */
+}
+
+.aetheris-package-node>* {
+  pointer-events: auto;
 }
 
 .package-header {
   position: absolute;
-  top: -36px;
+  top: -40px;
   left: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 1rem;
-  font-weight: 800;
+  gap: 10px;
+  font-size: 1.2rem;
+  font-weight: 900;
   color: #1e293b;
   pointer-events: auto;
   z-index: 10;
-  padding: 4px 12px;
-  background: white;
-  border-radius: 4px 4px 0 0;
-  border: 2px solid #334155;
+  padding: 4px 16px;
+  background: #fff;
+  border: 3px solid #334155;
+  border-radius: 15px 15px 0 0;
   border-bottom: none;
+  transform: rotate(-1deg);
 }
 
 .color-picker {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
-  padding: 8px;
-  border-top: 1px solid #e2e8f0;
-  margin-top: 4px;
+  padding: 4px 12px 12px 12px;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .color-swatch {
@@ -321,6 +372,54 @@ html {
 
 .color-swatch:hover {
   transform: scale(1.1);
+}
+
+.context-menu-label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  padding: 10px 12px 4px 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.target-selector {
+  display: flex;
+  gap: 4px;
+  padding: 0 12px 10px 12px;
+  border-bottom: 1px dashed #e2e8f0;
+  margin-bottom: 8px;
+}
+
+.font-size-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 12px 12px 12px;
+}
+
+.font-size-button {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  background: white;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-family: sans-serif;
+  transition: all 0.1s;
+}
+
+.font-size-button:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.font-size-button.active {
+  background: var(--accent-blue);
+  color: white;
+  border-color: var(--accent-blue);
 }
 
 .package-icon {
